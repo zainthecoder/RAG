@@ -1,4 +1,5 @@
 from tqdm.notebook import tqdm
+from tqdm.gui import tqdm
 import pandas as pd
 from typing import List, Tuple
 from datasets import Dataset
@@ -7,6 +8,8 @@ import os
 import json
 import pdb
 from vector_database import vector_data_base_createion
+from langchain.docstore.document import Document as LangchainDocument
+
 
 
 
@@ -72,7 +75,7 @@ def main():
     #pdb.set_trace()
 
     # File path to your JSON file
-    file_path = "/home/s28zabed/rag/rag/data/reviews.json"
+    file_path = "/home/s28zabed/RAG/reviews.json"
 
     # Load data from JSON file
     data = load_json(file_path)

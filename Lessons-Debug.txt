@@ -1,0 +1,13 @@
+1. I need to add the version in the requirements.txt
+2. pip install --user package_name
+3. Create the venv, its helpful in solving the import issues
+4.pip install filelock datasets
+5.pip install --force-reinstall datasets
+6. module load Python/3.10
+7. langchain community , i was not able to download, then we chabge tge oythib versuib if ev
+9. sbatch script.sh. -> to run the job on bender
+10. squeue --me. -> to check all the jobs
+11. datasets -> issue: https://huggingface.co/docs/datasets/en/installation
+12. salloc --partition=A40medium  --time=00:30:00
+13. scancel --user=<username> -> to cancel all jobs
+14. cancel -> control+⌘+(u, x) ->Stop the current SFTP/FTP server activity (connection, upload or downloa
