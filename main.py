@@ -9,7 +9,7 @@ import json
 import pdb
 from vector_database import vector_data_base_createion
 from langchain.docstore.document import Document as LangchainDocument
-
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 
@@ -93,6 +93,7 @@ def main():
     # Print the first processed document
     print(docs_processed)
     vector_data_base_createion(docs_processed)
+    print ("######zain####")
 
 
 
