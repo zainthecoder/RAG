@@ -15,3 +15,5 @@ faiss-gpu
 matplotlib
 tqdm
 pandas
+langchain
+langchain_community
