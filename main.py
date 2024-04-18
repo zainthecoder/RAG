@@ -7,7 +7,7 @@ import locale
 import os
 import json
 import pdb
-from vector_database import vector_data_base_createion, retrieval_top_k
+from vector_database import vector_data_base_createion, retrieval_top_k, answer_with_rag, READER_LLM, RAG_PROMPT_TEMPLATE
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -97,6 +97,18 @@ def main():
     vector_database = vector_data_base_createion(docs_processed)
     retrieval_top_k(user_query, vector_database)
     print ("######zain####")
+
+    question = "is this a good calendar?"
+
+    answer, relevant_docs = answer_with_rag(
+        question, READER_LLM, vector_database
+    )
+    print("==================================Answer==================================")
+    print(f"{answer}")
+    print("==================================Source docs==================================")
+    for i, doc in enumerate(relevant_docs):
+        print(f"Document {i}------------------------------------------------------------")
+        print(doc)
 
 
 
