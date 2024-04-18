@@ -7,7 +7,7 @@ import locale
 import os
 import json
 import pdb
-from vector_database import vector_data_base_createion
+from vector_database import vector_data_base_createion, retrieval_top_k
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -92,7 +92,10 @@ def main():
 
     # Print the first processed document
     print(docs_processed)
-    vector_data_base_createion(docs_processed)
+    user_query = "I have heard that the quality of the product is not that good"
+
+    vector_database = vector_data_base_createion(docs_processed)
+    retrieval_top_k(user_query, vector_database)
     print ("######zain####")
 
 
