@@ -11,3 +11,8 @@
 12. salloc --partition=A40medium  --time=00:30:00
 13. scancel --user=<username> -> to cancel all jobs
 14. cancel -> control+⌘+(u, x) ->Stop the current SFTP/FTP server activity (connection, upload or downloa
+15.  python3.6 -m venv .env2 -> to create virtual env -> the punctuation restoration repo works with python 3. 
+16. python src/train.py --cuda=True --pretrained-model=roberta-large --freeze-bert=False --lstm-dim=-1 --language=english --seed=1 --lr=5e-6 --epoch=10 --use-crf=False --augment-type=all  --augment-rate=0.15 --alpha-sub=0.4 --alpha-del=0.4 --data-path=data --save-path=out 
+17. python src/test.py --pretrained-model=roberta-large --lstm-dim=-1 --use-crf=False --data-path=data/test --weight-path=weights/roberta-large-en.pt --sequence-length=256 --save-path=out
+18. srun --partition=A100devel --nodes=1 --ntasks-per-node=1  --pty bash -i python src/train.py --cuda=True --pretrained-model=roberta-large --freeze-bert=False --lstm-dim=-1 --language=english --seed=1 --lr=5e-6 --epoch=10 --use-crf=False --augment-type=all  --augment-rate=0.15 --alpha-sub=0.4 --alpha-del=0.4 --data-path=data --save-path=out2
+19. head --bytes 100 100_blocks_neg.json
