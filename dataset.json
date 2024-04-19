@@ -1,0 +1,80 @@
+{
+   "B00836Y6B2":{
+      "Qpos1A_Apos1A":{
+         "Qpos1A_Apos1A_1":{
+            "Qpos1A":{
+               "Question":"In your honest opinion, how is its price?",
+               "Labels":{
+                  "Key":"B00836Y6B2_AFGB723G8ECAX_0_0",
+                  "Aspect":"price",
+                  "Polarity":"positive"
+               }
+            },
+            "Apos1A":{
+               "Answer":"Good product, great price.",
+               "Labels":{
+                  "Key":"B00836Y6B2_AFGB723G8ECAX_0_0",
+                  "Aspect":"price",
+                  "Polarity":"positive"
+               }
+            }
+         },
+         "Qpos1A_Apos1A_2":{
+            "Qpos1A":{
+               "Question":"What about its battery life?",
+               "Labels":{
+                  "Key":"B00836Y6B2_A12ZKYAGIYYZAM_1_0",
+                  "Aspect":"battery life",
+                  "Polarity":"positive"
+               }
+            },
+            "Apos1A":{
+               "Answer":"Great battery life too, if you know how to set your settings correctly.",
+               "Labels":{
+                  "Key":"B00836Y6B2_A12ZKYAGIYYZAM_1_0",
+                  "Aspect":"battery life",
+                  "Polarity":"positive"
+               }
+            }
+         },
+         "Oneg1A_Opos1A":{
+            "Oneg1A_Opos1A_1":{
+               "Oneg1A":{
+                  "Opinion":"I heard about its quality that bad quality screen",
+                  "Labels":{
+                     "Key":"B00836Y6B2_A33MRJH4XK9Q7_0_0",
+                     "Aspect":"quality",
+                     "Polarity":"negative"
+                  }
+               },
+               "Opos1A":{
+                  "Opinion":"Let me disagree with you, because very good quality product.",
+                  "Labels":{
+                     "Key":"B00836Y6B2_A24IGIAV2LB7IO_2_0",
+                     "Aspect":"quality",
+                     "Polarity":"positive"
+                  }
+               }
+            },
+            "Oneg1A_Opos1A_2":{
+               "Oneg1A":{
+                  "Opinion":"I heard about its quality that bad quality screen",
+                  "Labels":{
+                     "Key":"B00836Y6B2_A33MRJH4XK9Q7_0_0",
+                     "Aspect":"quality",
+                     "Polarity":"negative"
+                  }
+               },
+               "Opos1A":{
+                  "Opinion":"No, I don't think so, because I give it a 5 star due to the quality and of how reliable this product is.",
+                  "Labels":{
+                     "Key":"B00836Y6B2_A3D0RD3SBCFGL4_0_0",
+                     "Aspect":"quality",
+                     "Polarity":"positive"
+                  }
+               }
+            }
+         }
+      }
+   }
+}
