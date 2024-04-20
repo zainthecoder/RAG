@@ -7,14 +7,11 @@ import locale
 import os
 import json
 import pdb
-#from vector_database import vector_data_base_createion, retrieval_top_k, answer_with_rag, READER_LLM, RAG_PROMPT_TEMPLATE
+from vector_database import vector_data_base_createion, retrieval_top_k, answer_with_rag, READER_LLM, RAG_PROMPT_TEMPLATE
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 import tempfile
-
-
-
 
 
 def load_json(file_path: str) -> List[dict]:
@@ -56,9 +53,9 @@ def save_reviews_to_file(reviews: List[str], file_path: str) -> None:
     """Save reviews to a text file."""
     with open(file_path, "w") as f:
         for review in reviews:
-            f.write(review + "#@#@#\n")
+            f.write(review + " #@#@#\n")
 
-def separate_reviews(input_file: str, output_file: str) -> None:
+def format_reviews(input_file: str, output_file: str) -> None:
     """Separate reviews from the input file and write them to the output file."""
     # Read contents of the input file
     with open(input_file, 'r') as f:
@@ -66,14 +63,11 @@ def separate_reviews(input_file: str, output_file: str) -> None:
 
     # Split the content based on the delimiter '#@#@#'
     reviews = content.replace('#@#@#,','\n').replace('#@#@#','\n').split("\n")[:-1]
-    print("debug reviews####", reviews)
 
 
     # Open the output file and write each review to a separate line
     with open(output_file, 'w') as f:
         for review in reviews:
-            print("zain\n")
-            print(review)
             # Remove leading and trailing whitespaces
             review = review.strip()
             # If the review does not end with a full stop, add it
@@ -90,12 +84,12 @@ def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
 
     review_texts_file = "/home/s28zabed/RAG/reviews_text_file.txt"
     punctuated_review_texts_file = "/home/s28zabed/RAG/punctuated_reviews.txt"
-    review_texts_file_punc = "/home/s28zabed/RAG/reviews_text_file_punctuated.txt"
+    review_texts_from_model = "/home/s28zabed/RAG/reviews_text_from_model.txt"
     
-    # Save review texts to a text file
+    # Save review texts to a text file, with f.write(review + "#@#@#\n")
     save_reviews_to_file(review_texts, review_texts_file)
     
-    separate_reviews(review_texts_file_punc, punctuated_review_texts_file)
+    format_reviews(review_texts_from_model, punctuated_review_texts_file)
 
     
     # Read punctuated reviews from the text file
@@ -104,14 +98,7 @@ def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
         for line in f:
             punctuated_reviews.append(line.strip())
     
-
-    print("#####Debug#######")
-    print("review_texts:", review_texts)
-    print("\n")
-    print("punctuated_reviews:", punctuated_reviews)
-    print("#####Debug#######")
-    
-    print(data)
+    #print(data)
     product_ids = [item["asin"] for item in data]
     reviewer_ids = [item["reviewerID"] for item in data]
     ds = Dataset.from_dict({"reviewText": punctuated_reviews, "asin": product_ids, "reviewerID": reviewer_ids})
@@ -167,33 +154,33 @@ def main():
 
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
-    print(ds)
+    #print(ds)
 
     # Preprocess documents for Langchain
     raw_docs = preprocess_documents(ds)
-    print(raw_docs)
+    #print(raw_docs)
     # Split documents using Langchain's text splitter: Chunking
-    # docs_processed = split_documents(raw_docs)
+    docs_processed = split_documents(raw_docs)
 
-    # Print the first processed document
-    # print(docs_processed)
-    # user_query = "I have heard that the quality of the product is not that good"
+    #Print the first processed document
+    #print(docs_processed)
+    user_query = "I have heard that the quality of the product is not that good"
 
-    # vector_database = vector_data_base_createion(docs_processed)
-    # retrieval_top_k(user_query, vector_database)
-    # print ("######zain####")
+    vector_database = vector_data_base_createion(docs_processed)
+    retrieval_top_k(user_query, vector_database)
+    print ("######zain####")
 
-    # question = "is this a good calendar?"
+    question = "is this a good calendar?"
 
-    # answer, relevant_docs = answer_with_rag(
-    #     question, READER_LLM, vector_database
-    # )
-    # print("==================================Answer==================================")
-    # print(f"{answer}")
-    # print("==================================Source docs==================================")
-    # for i, doc in enumerate(relevant_docs):
-    #     print(f"Document {i}------------------------------------------------------------")
-    #     print(doc)
+    answer, relevant_docs = answer_with_rag(
+        question, READER_LLM, vector_database
+    )
+    print("==================================Answer==================================")
+    print(f"{answer}")
+    print("==================================Source docs==================================")
+    for i, doc in enumerate(relevant_docs):
+        print(f"Document {i}------------------------------------------------------------")
+        print(doc)
 
 
 

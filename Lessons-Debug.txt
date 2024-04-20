@@ -7,7 +7,7 @@
 7. langchain community , i was not able to download, then we chabge tge oythib versuib if ev
 9. sbatch script.sh. -> to run the job on bender
 10. squeue --me. -> to check all the jobs
-11. datasets -> issue: https://huggingface.co/docs/datasets/en/installation
+11. datasets -> First module load Python on bender, then activate the venv ->  doc: https://huggingface.co/docs/datasets/en/installation
 12. salloc --partition=A40medium  --time=00:30:00
 13. scancel --user=<username> -> to cancel all jobs
 14. cancel -> control+⌘+(u, x) ->Stop the current SFTP/FTP server activity (connection, upload or downloa
