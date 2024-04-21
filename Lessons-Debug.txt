@@ -24,3 +24,24 @@
 23. pip install torch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0
 24.  pip install tensorflow==2.8.0
 25. 
+
+
+
+I want to write a script where i get a list of question and answers.
+in the outer level of json we have  for example B00J9XQRFG
+in every outer level has few inner child
+
+"Qpos1A_Apos1A": { },
+"Oneg1A_Opos1A": { },
+"Oneg1A_Opos1B_retrieved": { },
+"Oneg1A_Opos1B_also_view": { },
+"Oneg1A_Opos2A_restricted": { },
+"Oneg1A_Opos2A_unrestricted": { },
+"Opos1B_Opos1B2_only_agreement": { },
+"Opos1B_Opos1B2_agreement_and_more": { },
+"Opos1B_Opos2B": { },
+ "Opos1B_Oneg2B": { }
+
+in these only "Qpos1A_Apos1A": { },
+Question field contains the question
+answer field contains the answer

@@ -18,3 +18,4 @@ pandas
 langchain
 langchain_community
 datasets
+pprintpp
