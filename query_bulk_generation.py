@@ -1,7 +1,7 @@
 import json
 import os
 import pprint
-import uuid
+from nanoid import generate
 
 #hi bro
 def extract_question_answer_pairs(data):
@@ -25,14 +25,15 @@ def extract_question_answer_pairs(data):
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
                             key_answer = pair_data['Labels']['Key']
-                    unique_id = uuid.uuid4()
-                    qa_pairs.append((
-                            unique_id,
-                            key_question,
-                            key_answer,
-                            question,
-                            answer
-                        ))
+
+                    unique_id=generate(size=10) 
+                    qa_pairs.append({
+                            "unique_id":unique_id,
+                            "key_question":key_question,
+                            "key_answer":key_answer,
+                            "question":question,
+                            "answer":answer
+                        })
                 else:
                     counter = 1
                     for pair_key, pair_data in conv_data.items():
@@ -45,14 +46,14 @@ def extract_question_answer_pairs(data):
                         elif counter == 2:
                             answer = pair_data['Opinion']
                             key_answer = pair_data['Labels']['Key']
-                    unique_id = uuid.uuid4()
-                    qa_pairs.append((
-                            unique_id,
-                            key_question,
-                            key_answer,
-                            question,
-                            answer
-                        ))
+                    unique_id=generate(size=10)
+                    qa_pairs.append({
+                            "unique_id":unique_id,
+                            "key_question":key_question,
+                            "key_answer":key_answer,
+                            "question":question,
+                            "answer":answer
+                        })
 
     return qa_pairs
 
@@ -75,7 +76,13 @@ print("zainnnn")
 #pprint.pprint(data)
     # Create a Hugging Face dataset
 qa_pairs = extract_question_answer_pairs(data)
-pprint.pprint(qa_pairs)
+
+# File path to save the Python list
+file_path = "qa_pairs.json"
+
+# Save qa_pairs as a Python list to a JSON file
+with open(file_path, "w") as f:
+    json.dump(qa_pairs, f)
 
  # "B00836Y6B2": {
  #        "Opos1B_Opos1B2_only_agreement": {
