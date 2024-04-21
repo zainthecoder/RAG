@@ -155,11 +155,13 @@ def main():
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
     #print(ds)
+    print("zain was hereeeee")
 
     # Preprocess documents for Langchain
     raw_docs = preprocess_documents(ds)
-    #print(raw_docs)
-    # Split documents using Langchain's text splitter: Chunking
+    print(raw_docs)
+    
+    #Split documents using Langchain's text splitter: Chunking
     docs_processed = split_documents(raw_docs)
 
     #Print the first processed document
@@ -175,12 +177,7 @@ def main():
     answer, relevant_docs = answer_with_rag(
         question, READER_LLM, vector_database
     )
-    print("==================================Answer==================================")
-    print(f"{answer}")
-    print("==================================Source docs==================================")
-    for i, doc in enumerate(relevant_docs):
-        print(f"Document {i}------------------------------------------------------------")
-        print(doc)
+
 
 
 
