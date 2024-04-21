@@ -1,6 +1,7 @@
 import json
 import os
 import pprint
+import uuid
 
 #hi bro
 def extract_question_answer_pairs(data):
@@ -8,20 +9,25 @@ def extract_question_answer_pairs(data):
     qa_pairs = []
 
     for product_key, product_data in data.items():
+        #print(product_key)
         for conv_type, conv_type_data in product_data.items():
+            #print(conv_type)
+            #print("conv_type_data: ",conv_type_data)
             for conv_key, conv_data in conv_type_data.items():
+                #pprint.pprint(conv_key)
                 if conv_type == 'Qpos1A_Apos1A':
                     for pair_key, pair_data in conv_data.items():
-                        pprint.pprint(pair_key)
-                        pprint.pprint(pair_data)
+                        #pprint.pprint(pair_key)
+                        #pprint.pprint(pair_data)
                         if 'Qpos1A' in pair_key:
                             question = pair_data['Question']
                             key_question = pair_data['Labels']['Key']
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
                             key_answer = pair_data['Labels']['Key']
-
+                    unique_id = uuid.uuid4()
                     qa_pairs.append((
+                            unique_id,
                             key_question,
                             key_answer,
                             question,
@@ -30,8 +36,8 @@ def extract_question_answer_pairs(data):
                 else:
                     counter = 1
                     for pair_key, pair_data in conv_data.items():
-                        pprint.pprint(pair_key)
-                        pprint.pprint(pair_data)
+                        #pprint.pprint(pair_key)
+                        #pprint.pprint(pair_data)
                         if counter == 1:
                             question = pair_data['Opinion']
                             key_question = pair_data['Labels']['Key']
@@ -39,8 +45,9 @@ def extract_question_answer_pairs(data):
                         elif counter == 2:
                             answer = pair_data['Opinion']
                             key_answer = pair_data['Labels']['Key']
-
+                    unique_id = uuid.uuid4()
                     qa_pairs.append((
+                            unique_id,
                             key_question,
                             key_answer,
                             question,
@@ -68,7 +75,7 @@ print("zainnnn")
 #pprint.pprint(data)
     # Create a Hugging Face dataset
 qa_pairs = extract_question_answer_pairs(data)
-print (qa_pairs)
+pprint.pprint(qa_pairs)
 
  # "B00836Y6B2": {
  #        "Opos1B_Opos1B2_only_agreement": {
