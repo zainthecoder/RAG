@@ -7,6 +7,7 @@ from nanoid import generate
 def extract_question_answer_pairs(data):
     
     qa_pairs = []
+    
 
     for product_key, product_data in data.items():
         #print(product_key)
