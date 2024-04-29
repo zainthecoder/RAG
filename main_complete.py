@@ -319,9 +319,9 @@ def main():
     #pdb.set_trace()
 
     # File path to your JSON file
-    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
+    #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
     #file_path = "/content/drive/MyDrive/RAG/1000_reviews.json"
-    #file_path = "/content/drive/MyDrive/RAG/Cell_Phones_and_Accessories_5 (1).json.gz"
+    file_path = "/content/drive/MyDrive/RAG/Cell_Phones_and_Accessories_5.json.gz"
 
 
     # Load data from JSON file

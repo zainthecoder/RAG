@@ -59,6 +59,7 @@ READER_LLM = pipeline(
         repetition_penalty=1.1,
         return_full_text=False,
         max_new_tokens=500,
+        torch_dtype=torch.bfloat16
 )
 
 
@@ -69,6 +70,7 @@ prompt_in_chat_format = """
 Answer the question only based on the following context:
 Give a short answer and don't mention "based on the provided context"
 -----
+
 
 Context: {context}
 
