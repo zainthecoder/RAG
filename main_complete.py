@@ -22,14 +22,14 @@ READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
 
 #hello
 
-EMBEDDING_MODEL_NAME = "thenlper/gte-small"
+# EMBEDDING_MODEL_NAME = "thenlper/gte-small"
 
-embedding_model = HuggingFaceEmbeddings(
-    model_name=EMBEDDING_MODEL_NAME,
-    multi_process=True,
-    model_kwargs={"device": "cuda"},
-    encode_kwargs={"normalize_embeddings": True},  # set True for cosine similarity
-)
+# embedding_model = HuggingFaceEmbeddings(
+#     model_name=EMBEDDING_MODEL_NAME,
+#     multi_process=True,
+#     model_kwargs={"device": "cuda"},
+#     encode_kwargs={"normalize_embeddings": True},  # set True for cosine similarity
+# )
 
 def vector_data_base_createion(docs_processed):
     print(docs_processed)
@@ -38,28 +38,28 @@ def vector_data_base_createion(docs_processed):
     )
     return KNOWLEDGE_VECTOR_DATABASE
 
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16,
-)
-model = AutoModelForCausalLM.from_pretrained(
-    READER_MODEL_NAME, quantization_config=bnb_config
-)
-tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
+# bnb_config = BitsAndBytesConfig(
+#     load_in_4bit=True,
+#     bnb_4bit_use_double_quant=True,
+#     bnb_4bit_quant_type="nf4",
+#     bnb_4bit_compute_dtype=torch.bfloat16,
+# )
+# model = AutoModelForCausalLM.from_pretrained(
+#     READER_MODEL_NAME, quantization_config=bnb_config
+# )
+# tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
 
-READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
-READER_LLM = pipeline(
-        model=model,
-        tokenizer=tokenizer,
-        task="text-generation",
-        do_sample=True,
-        temperature=0.2,
-        repetition_penalty=1.1,
-        return_full_text=False,
-        max_new_tokens=500,
-)
+#READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
+# READER_LLM = pipeline(
+#         model=model,
+#         tokenizer=tokenizer,
+#         task="text-generation",
+#         do_sample=True,
+#         temperature=0.2,
+#         repetition_penalty=1.1,
+#         return_full_text=False,
+#         max_new_tokens=500,
+# )
 
 
 
@@ -130,14 +130,14 @@ def answer_with_rag(
     # )
     print("question:",question)
     print("productId:",product_id)
-    # relevant_docs = knowledge_index.similarity_search_with_score(
-    #     query=question,
-    #     filter=dict(productId=product_id),
-    #     k=1
-    #     )
-    relevant_docs = knowledge_index.similarity_search(
-        query=question, k=1
-    )
+    relevant_docs = knowledge_index.similarity_search_with_score(
+        query=question,
+        filter=dict(productId=product_id),
+        k=1
+        )
+    # relevant_docs = knowledge_index.similarity_search(
+    #     query=question, k=1
+    # )
     print("zain relevant_docs:",relevant_docs)
     relevant_docs = [doc.page_content for doc in relevant_docs]  # keep only the text
 
@@ -248,7 +248,17 @@ def format_reviews(input_file: str, output_file: str) -> None:
 def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
     """Create a Hugging Face dataset from JSON data with punctuated reviews."""
 
-    review_texts = [item['reviewText'] for item in data]
+    review_texts = [item.get('reviewText', " ") for item in data]
+    # review_texts = []
+    # for item in data:
+    #     if item.get('reviewText'):
+    #         review_texts.append(item['reviewText'])
+    #     else:
+    #         print("I guess review is not there")
+    #         print(item.get('reviewText'))
+    #         review_texts.append(" ")
+
+
     #review_texts_file = "/content/drive/MyDrive/RAG/reviews_text_file.txt"
     ##punctuated_review_texts_file = "/content/drive/MyDrive/RAG/punctuated_reviews.txt"
     #review_texts_from_model = "/content/drive/MyDrive/RAG/reviews_text_from_model.txt"
@@ -321,17 +331,17 @@ def main():
     # File path to your JSON file
     #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
     #file_path = "/content/drive/MyDrive/RAG/1000_reviews.json"
-    file_path = "/content/drive/MyDrive/RAG/Cell_Phones_and_Accessories_5.json.gz"
+    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
 
 
     # Load data from JSON file
-    data = load_json(file_path)
-    #data = parse(file_path)
-
+    #data = load_json(file_path)
+    data = parse(file_path)
+    print(data[0])
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
     print(ds[0])
-    print(ds[-1])
+    # print(ds[-1])
 
    
 
@@ -343,18 +353,19 @@ def main():
     print("Document after chunking")
     #Split documents using Langchain's text splitter: Chunking
     docs_processed = split_documents(raw_docs)
-    #pprint.pprint(docs_processed)
+    pprint.pprint(docs_processed[0])
 
-    print("zain is here againnn")
+    # print("zain is here againnn")
 
 
 
-    # # Define input and output file paths
+    # Define input and output file paths
+    # now we need to create qa_pairs for the entire dataset
     input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs_new.json"
     output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/rag_output.json"
 
-    # Process questions and answers using RAG
-    process_questions_and_answers(input_file_path, output_file_path,docs_processed)
+    # # Process questions and answers using RAG
+    # process_questions_and_answers(input_file_path, output_file_path,docs_processed)
 
 
 

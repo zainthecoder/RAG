@@ -68,10 +68,10 @@ def load_json(file_path):
     return data
 
 
-   # File path to your JSON file
-file_path = "/Users/zainabedin/Desktop/RAG/dataset.json"
+# File path to your JSON file
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
 
-    # Load data from JSON file
+# Load data from JSON file
 data = load_json(file_path)
 print("zainnnn")
 #pprint.pprint(data)
@@ -79,7 +79,7 @@ print("zainnnn")
 qa_pairs = extract_question_answer_pairs(data)
 
 # File path to save the Python list
-file_path = "qa_pairs.json"
+file_path = "neg_qa_pairs.json"
 
 # Save qa_pairs as a Python list to a JSON file
 with open(file_path, "w") as f:
