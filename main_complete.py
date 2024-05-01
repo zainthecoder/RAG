@@ -16,10 +16,6 @@ import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
-#READER_MODEL_NAME = "gpt2-medium"
-
-
-
 #hello
 
 EMBEDDING_MODEL_NAME = "thenlper/gte-small"
@@ -32,7 +28,7 @@ embedding_model = HuggingFaceEmbeddings(
 )
 
 def vector_data_base_createion(docs_processed):
-    print(docs_processed)
+    #print(docs_processed)
     KNOWLEDGE_VECTOR_DATABASE = FAISS.from_documents(
         docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
     )
@@ -110,6 +106,19 @@ def process_questions_and_answers(input_file_path, output_file_path, docs_proces
         item["answer_from_rag"] = answer
         item["final_prompt"] = final_prompt
 
+        #The id from retrieved reviews is x
+        #the id of answer from qa_paris is y
+        #if x!=y
+        # then search a qa pairs in qa_paris
+        #   with answer id as y and question id as before
+        ##
+
+
+        #The vector database is large
+        #I should save it somewhere then resuse it 
+        #so that it is easy while development
+
+
     # Save the updated data to a new JSON file
     save_json(data, output_file_path)
     print(f"Processed data saved to {output_file_path}")
@@ -130,14 +139,14 @@ def answer_with_rag(
     # )
     print("question:",question)
     print("productId:",product_id)
-    # relevant_docs = knowledge_index.similarity_search_with_score(
-    #     query=question,
-    #     filter=dict(productId=product_id),
-    #     k=1
-    #     )
-    relevant_docs = knowledge_index.similarity_search(
-        query=question, k=1
-    )
+    relevant_docs = knowledge_index.similarity_search_with_score(
+        query=question,
+        filter=dict(productId=product_id),
+        k=1
+        )
+    # relevant_docs = knowledge_index.similarity_search(
+    #     query=question, k=1
+    # )
     print("zain relevant_docs:",relevant_docs)
     relevant_docs = [doc.page_content for doc in relevant_docs]  # keep only the text
 
@@ -248,7 +257,17 @@ def format_reviews(input_file: str, output_file: str) -> None:
 def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
     """Create a Hugging Face dataset from JSON data with punctuated reviews."""
 
-    review_texts = [item['reviewText'] for item in data]
+    review_texts = [item.get('reviewText', " ") for item in data]
+    # review_texts = []
+    # for item in data:
+    #     if item.get('reviewText'):
+    #         review_texts.append(item['reviewText'])
+    #     else:
+    #         print("I guess review is not there")
+    #         print(item.get('reviewText'))
+    #         review_texts.append(" ")
+
+
     #review_texts_file = "/content/drive/MyDrive/RAG/reviews_text_file.txt"
     ##punctuated_review_texts_file = "/content/drive/MyDrive/RAG/punctuated_reviews.txt"
     #review_texts_from_model = "/content/drive/MyDrive/RAG/reviews_text_from_model.txt"
@@ -319,19 +338,19 @@ def main():
     #pdb.set_trace()
 
     # File path to your JSON file
-    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
+    #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
     #file_path = "/content/drive/MyDrive/RAG/1000_reviews.json"
-    #file_path = "/content/drive/MyDrive/RAG/Cell_Phones_and_Accessories_5 (1).json.gz"
+    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
 
 
     # Load data from JSON file
-    data = load_json(file_path)
-    #data = parse(file_path)
-
+    #data = load_json(file_path)
+    data = parse(file_path)
+    #print(data[0])
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
-    print(ds[0])
-    print(ds[-1])
+    #print(ds[0])
+    # print(ds[-1])
 
    
 
@@ -340,20 +359,22 @@ def main():
     #pprint.pprint(raw_docs)
 
 
-    print("Document after chunking")
+    #print("Document after chunking")
     #Split documents using Langchain's text splitter: Chunking
     docs_processed = split_documents(raw_docs)
-    #pprint.pprint(docs_processed)
+    #pprint.pprint(docs_processed[0])
 
-    print("zain is here againnn")
+    # print("zain is here againnn")
 
 
 
-    # # Define input and output file paths
-    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs_new.json"
-    output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/rag_output.json"
+    # Define input and output file paths
+    # now we need to create qa_pairs for the entire dataset
+    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_qa_pairs.json"
+    #output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_output_rag.json"
+    output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_output_rag.json"
 
-    # Process questions and answers using RAG
+    # # Process questions and answers using RAG
     process_questions_and_answers(input_file_path, output_file_path,docs_processed)
 
 
