@@ -16,50 +16,46 @@ import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
-#READER_MODEL_NAME = "gpt2-medium"
-
-
-
 #hello
 
-# EMBEDDING_MODEL_NAME = "thenlper/gte-small"
+EMBEDDING_MODEL_NAME = "thenlper/gte-small"
 
-# embedding_model = HuggingFaceEmbeddings(
-#     model_name=EMBEDDING_MODEL_NAME,
-#     multi_process=True,
-#     model_kwargs={"device": "cuda"},
-#     encode_kwargs={"normalize_embeddings": True},  # set True for cosine similarity
-# )
+embedding_model = HuggingFaceEmbeddings(
+    model_name=EMBEDDING_MODEL_NAME,
+    multi_process=True,
+    model_kwargs={"device": "cuda"},
+    encode_kwargs={"normalize_embeddings": True},  # set True for cosine similarity
+)
 
 def vector_data_base_createion(docs_processed):
-    print(docs_processed)
+    #print(docs_processed)
     KNOWLEDGE_VECTOR_DATABASE = FAISS.from_documents(
         docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
     )
     return KNOWLEDGE_VECTOR_DATABASE
 
-# bnb_config = BitsAndBytesConfig(
-#     load_in_4bit=True,
-#     bnb_4bit_use_double_quant=True,
-#     bnb_4bit_quant_type="nf4",
-#     bnb_4bit_compute_dtype=torch.bfloat16,
-# )
-# model = AutoModelForCausalLM.from_pretrained(
-#     READER_MODEL_NAME, quantization_config=bnb_config
-# )
-# tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+)
+model = AutoModelForCausalLM.from_pretrained(
+    READER_MODEL_NAME, quantization_config=bnb_config
+)
+tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
 
-#READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
-# READER_LLM = pipeline(
-#         model=model,
-#         tokenizer=tokenizer,
-#         task="text-generation",
-#         do_sample=True,
-#         temperature=0.2,
-#         repetition_penalty=1.1,
-#         return_full_text=False,
-#         max_new_tokens=500,
-# )
+READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
+READER_LLM = pipeline(
+        model=model,
+        tokenizer=tokenizer,
+        task="text-generation",
+        do_sample=True,
+        temperature=0.2,
+        repetition_penalty=1.1,
+        return_full_text=False,
+        max_new_tokens=500,
+)
 
 
 
@@ -109,6 +105,19 @@ def process_questions_and_answers(input_file_path, output_file_path, docs_proces
         answer = answer
         item["answer_from_rag"] = answer
         item["final_prompt"] = final_prompt
+
+        #The id from retrieved reviews is x
+        #the id of answer from qa_paris is y
+        #if x!=y
+        # then search a qa pairs in qa_paris
+        #   with answer id as y and question id as before
+        ##
+
+
+        #The vector database is large
+        #I should save it somewhere then resuse it 
+        #so that it is easy while development
+
 
     # Save the updated data to a new JSON file
     save_json(data, output_file_path)
@@ -337,10 +346,10 @@ def main():
     # Load data from JSON file
     #data = load_json(file_path)
     data = parse(file_path)
-    print(data[0])
+    #print(data[0])
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
-    print(ds[0])
+    #print(ds[0])
     # print(ds[-1])
 
    
@@ -350,10 +359,10 @@ def main():
     #pprint.pprint(raw_docs)
 
 
-    print("Document after chunking")
+    #print("Document after chunking")
     #Split documents using Langchain's text splitter: Chunking
     docs_processed = split_documents(raw_docs)
-    pprint.pprint(docs_processed[0])
+    #pprint.pprint(docs_processed[0])
 
     # print("zain is here againnn")
 
@@ -361,11 +370,12 @@ def main():
 
     # Define input and output file paths
     # now we need to create qa_pairs for the entire dataset
-    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs_new.json"
-    output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/rag_output.json"
+    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_qa_pairs.json"
+    #output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_output_rag.json"
+    output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_output_rag.json"
 
     # # Process questions and answers using RAG
-    # process_questions_and_answers(input_file_path, output_file_path,docs_processed)
+    process_questions_and_answers(input_file_path, output_file_path,docs_processed)
 
 
 

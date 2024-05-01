@@ -59,7 +59,6 @@ READER_LLM = pipeline(
         repetition_penalty=1.1,
         return_full_text=False,
         max_new_tokens=500,
-        torch_dtype=torch.bfloat16
 )
 
 
@@ -132,14 +131,14 @@ def answer_with_rag(
     # )
     print("question:",question)
     print("productId:",product_id)
-    # relevant_docs = knowledge_index.similarity_search_with_score(
-    #     query=question,
-    #     filter=dict(productId=product_id),
-    #     k=1
-    #     )
-    relevant_docs = knowledge_index.similarity_search(
-        query=question, k=1
-    )
+    relevant_docs = knowledge_index.similarity_search_with_score(
+        query=question,
+        filter=dict(productId=product_id),
+        k=1
+        )
+    # relevant_docs = knowledge_index.similarity_search(
+    #     query=question, k=1
+    # )
     print("zain relevant_docs:",relevant_docs)
     relevant_docs = [doc.page_content for doc in relevant_docs]  # keep only the text
 
@@ -352,7 +351,7 @@ def main():
 
 
     # # Define input and output file paths
-    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs_new.json"
+    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs.json"
     output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/rag_output.json"
 
     # Process questions and answers using RAG
