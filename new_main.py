@@ -33,10 +33,12 @@ embedding_model = HuggingFaceEmbeddings(
 
 def vector_data_base_createion(docs_processed):
     print(docs_processed)
-    KNOWLEDGE_VECTOR_DATABASE = FAISS.from_documents(
+    db = FAISS.from_documents(
         docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
     )
-    return KNOWLEDGE_VECTOR_DATABASE
+    db.save_local("faiss_index")
+    return db
+
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -64,6 +66,19 @@ READER_LLM = pipeline(
 
 
 import json
+import pandas as pd
+from typing import List, Tuple
+from datasets import Dataset
+import locale
+import os
+import json
+import pdb
+#from vector_database import vector_data_base_createion, retrieval_top_k, answer_with_rag, READER_LLM, RAG_PROMPT_TEMPLATE
+from langchain.docstore.document import Document as LangchainDocument
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+import tempfile
+import gzip
 
 prompt_in_chat_format = """
 Answer the question only based on the following context:
@@ -92,87 +107,7 @@ def save_json(data, file_path):
         json.dump(data, f, indent=4)
 
 # Function to process questions and answers using RAG
-def process_questions_and_answers(input_file_path, output_file_path, docs_processed):
-    # Load JSON data from input file
-    print("yahiiooooo")
-    data = load_json(input_file_path)
-    vector_database = vector_data_base_createion(docs_processed)
-    # Iterate over each question and answer pair
-    for item in data:
-        question = item["question"]
-        product_id = item["key_question"].split('_')[0]
 
-        answer, relevant_docs, final_prompt = answer_with_rag(
-            question, READER_LLM, vector_database, product_id
-        )
-
-
-        answer = answer
-        item["answer_from_rag"] = answer
-        item["final_prompt"] = final_prompt
-
-    # Save the updated data to a new JSON file
-    save_json(data, output_file_path)
-    print(f"Processed data saved to {output_file_path}")
-
-
-def answer_with_rag(
-    question,
-    llm,
-    knowledge_index,
-    product_id,
-    num_retrieved_docs: int = 1,
-    num_docs_final: int = 1,
-):
-    # Gather documents with retriever
-    print("=> Retrieving documents...")
-    # relevant_docs = knowledge_index.similarity_search(
-    #     query=question, k=num_retrieved_docs
-    # )
-    print("question:",question)
-    print("productId:",product_id)
-    relevant_docs = knowledge_index.similarity_search_with_score(
-        query=question,
-        filter=dict(productId=product_id),
-        k=1
-        )
-    # relevant_docs = knowledge_index.similarity_search(
-    #     query=question, k=1
-    # )
-    print("zain relevant_docs:",relevant_docs)
-    relevant_docs = [doc.page_content for doc in relevant_docs]  # keep only the text
-
-    relevant_docs = relevant_docs[:num_docs_final]
-
-
-    final_prompt = prompt_in_chat_format.format(question=question, context=relevant_docs)
-    #final_prompt = prompt2.format(question=question, context=relevant_docs)
-
-    print("final promp:", final_prompt)
-    print("relevant_docs:",relevant_docs)
-    # Redact an answer
-    print("=> Generating answer...")
-    answer = llm(final_prompt)[0]["generated_text"]
-    pprint.pprint(answer)
-    print("#############")
-    print("\n\n\n\n\n")
-
-    return answer, relevant_docs, final_prompt
-
-
-    import pandas as pd
-from typing import List, Tuple
-from datasets import Dataset
-import locale
-import os
-import json
-import pdb
-#from vector_database import vector_data_base_createion, retrieval_top_k, answer_with_rag, READER_LLM, RAG_PROMPT_TEMPLATE
-from langchain.docstore.document import Document as LangchainDocument
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-import tempfile
-import gzip
 
 def load_json(file_path: str) -> List[dict]:
     """Load data from a JSON file."""
@@ -249,7 +184,7 @@ def format_reviews(input_file: str, output_file: str) -> None:
 def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
     """Create a Hugging Face dataset from JSON data with punctuated reviews."""
 
-    review_texts = [item['reviewText'] for item in data]
+    review_texts = [item.get('reviewText', " ")  for item in data]
     #review_texts_file = "/content/drive/MyDrive/RAG/reviews_text_file.txt"
     ##punctuated_review_texts_file = "/content/drive/MyDrive/RAG/punctuated_reviews.txt"
     #review_texts_from_model = "/content/drive/MyDrive/RAG/reviews_text_from_model.txt"
@@ -320,19 +255,19 @@ def main():
     #pdb.set_trace()
 
     # File path to your JSON file
-    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
+    #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
     #file_path = "/content/drive/MyDrive/RAG/1000_reviews.json"
-    #file_path = "/content/drive/MyDrive/RAG/Cell_Phones_and_Accessories_5 (1).json.gz"
+    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
 
 
     # Load data from JSON file
-    data = load_json(file_path)
-    #data = parse(file_path)
+    #data = load_json(file_path)
+    data = parse(file_path)
 
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
-    print(ds[0])
-    print(ds[-1])
+    #print(ds[0])
+    #print(ds[-1])
 
    
 
@@ -348,19 +283,17 @@ def main():
 
     print("zain is here againnn")
 
+    db = vector_data_base_createion(docs_processed)
 
+    db.save_local("faiss_index")
 
-    # # Define input and output file paths
-    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs.json"
-    output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/rag_output.json"
-
-    # Process questions and answers using RAG
-    process_questions_and_answers(input_file_path, output_file_path,docs_processed)
-
+    #new_db = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
 
 
 if __name__ == "__main__":
     main()
+
+
 
 
 
