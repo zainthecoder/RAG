@@ -32,7 +32,6 @@ embedding_model = HuggingFaceEmbeddings(
 )
 
 def vector_data_base_createion(docs_processed):
-    print(docs_processed)
     db = FAISS.from_documents(
         docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
     )
@@ -290,8 +289,6 @@ def main():
     #new_db = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
 
 
-if __name__ == "__main__":
-    main()
 
 
 
