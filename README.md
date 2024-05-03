@@ -19,3 +19,9 @@ I need to create the vector database seperate from the everytime script run
 
 While you screens are running, if you change code, it will affect all the screens.
 
+
+
+##Command
+
+python run_rag.py rag_output_1.json 1 -> means we are running the filtering
+

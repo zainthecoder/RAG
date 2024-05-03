@@ -20,7 +20,7 @@ READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
 
 
 
-#hello
+#hello zain
 
 EMBEDDING_MODEL_NAME = "thenlper/gte-small"
 
@@ -35,6 +35,7 @@ def vector_data_base_createion(docs_processed):
     db = FAISS.from_documents(
         docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
     )
+    print("saving the data index")
     db.save_local("faiss_index")
     return db
 
@@ -50,18 +51,6 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
 
-READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
-READER_LLM = pipeline(
-        model=model,
-        tokenizer=tokenizer,
-        task="text-generation",
-        do_sample=True,
-        temperature=0.2,
-        repetition_penalty=1.1,
-        return_full_text=False,
-        max_new_tokens=500,
-)
-
 
 
 import json
@@ -72,7 +61,6 @@ import locale
 import os
 import json
 import pdb
-#from vector_database import vector_data_base_createion, retrieval_top_k, answer_with_rag, READER_LLM, RAG_PROMPT_TEMPLATE
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -254,18 +242,18 @@ def main():
     #pdb.set_trace()
 
     # File path to your JSON file
-    #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/reviews3.json"
-    #file_path = "/content/drive/MyDrive/RAG/1000_reviews.json"
-    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
+    file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_reviews.json"
+
+    #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
 
 
     # Load data from JSON file
-    #data = load_json(file_path)
-    data = parse(file_path)
+    data = load_json(file_path)
+    #data = parse(file_path)
 
     # Create a Hugging Face dataset
     ds = create_huggingface_dataset_with_punctuation(data)
-    #print(ds[0])
+    print(ds[0])
     #print(ds[-1])
 
    
@@ -284,13 +272,13 @@ def main():
 
     db = vector_data_base_createion(docs_processed)
 
-    db.save_local("faiss_index")
 
     #new_db = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
 
 
 
-
+# if __name__ == "__main__":
+#     main()
 
 
 

@@ -16,7 +16,7 @@ from transformers import pipeline
 import torch
 import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from script.config import (
+from config import (
     embedding_model,
     READER_LLM
     )
@@ -158,17 +158,19 @@ def answer_with_rag(
     #metadata = metadata[:num_docs_final]
     #print("rag_reviewer_id: ",metadata.reviewerId)
     #print("rag_product_id: ",metadata.productId)
-
-
-    relevant_doc = relevant_docs[0]
-    relevant_page_content = relevant_doc.page_content
-    metadata = relevant_doc.metadata
-    rag_reviewer_id = metadata.get("reviewerID", None)
-    rag_product_id = metadata.get("productId", None)
-    print("rag_reviewer_id: ",rag_reviewer_id)
-    print("rag_product_id: ",rag_product_id)
-    rag_key = rag_product_id+"_"+rag_reviewer_id
-    print("rag_key: ",rag_key)
+    rag_key = " "
+    if relevant_docs:
+        relevant_doc = relevant_docs[0]
+        relevant_page_content = relevant_doc.page_content
+        metadata = relevant_doc.metadata
+        rag_reviewer_id = metadata.get("reviewerID", None)
+        rag_product_id = metadata.get("productId", None)
+        print("rag_reviewer_id: ",rag_reviewer_id)
+        print("rag_product_id: ",rag_product_id)
+        rag_key = rag_product_id+"_"+rag_reviewer_id
+        print("rag_key: ",rag_key)
+    else:
+        print("no relevant_doc")
 
 
     final_prompt = prompt_in_chat_format.format(question=question, context=relevant_docs)
@@ -206,8 +208,8 @@ def main():
     output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/" + output_file_name
     print(output_file_path)
 
-    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/combined_qa_pairs.json"
-    #input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_qa_pairs.json"
+    #input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/combined_qa_pairs.json"
+    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_qa_pairs.json"
     process_questions_and_answers(input_file_path, output_file_path,filter)
 
 
