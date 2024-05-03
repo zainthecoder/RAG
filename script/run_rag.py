@@ -16,7 +16,7 @@ from transformers import pipeline
 import torch
 import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from config import (
+from script.config import (
     embedding_model,
     READER_LLM
     )
