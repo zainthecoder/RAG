@@ -58,27 +58,50 @@ def save_json_append(data, file_path):
         f.write('\n')  # Write newline character to separate JSON objects
 
 
-def search_neg_qa_pairs(data, rag_key, question_key):
-    for item in data:
-        # print("$$$$$")
-        # print("item: ",item)
-        # print("rag_key: ",rag_key)
-        # print("question_key: ",question_key)
-        # print("$$$$$$")
+# def search_neg_qa_pairs(data, rag_key, question_key):
+#     for item in data:        
+#         print(item)
+#         if  item["key_question"] == question_key and item["key_answer"] == rag_key:
+#             return item
+#     print("we did not find , we will return, NOT PRESENT")
+#     return {"answer": "Not present"}
+# def search_neg_qa_pairs(data, rag_key, question_key):
+#     lookup_dict = {}
+#     for item in data:
+#         key_pair = (item["key_question"], item["key_answer"])
+#         lookup_dict[key_pair] = item
+        
+#     key_pair_to_find = (question_key, rag_key)
+#     if key_pair_to_find in lookup_dict:
+#         return lookup_dict[key_pair_to_find]
+#     else:
+#         print("Not present")
+#         return {"answer": "Not present"}
 
-        if  item["key_question"] == question_key and item["key_answer"] == rag_key:
-            print("we find the pair")
-            print(item)
-            print("&&&&&")
-            print(item)
-            return item
-    print("we did not find , we will return, NOT PRESENT")
-    return {"answer": "Not present"}
+import pandas
+
+def search_neg_qa_pairs(data, rag_key, question_key):
+    # Convert the list of dictionaries to a cuDF dataframe
+    df = pandas.DataFrame(data)
+    
+    # Create a new column with the combined key pair
+    df['key_pair'] = df['key_question'] + '_' + df['key_answer']
+    
+    # Search for the desired key pair
+    result = df[df['key_pair'] == (question_key + '_' + rag_key)]
+    
+    if len(result) > 0:
+        # Return the first matching row
+        return result.iloc[0].to_dict()
+    else:
+        print("Not present")
+        return {"answer": "Not present"}
+
+
 
 # Function to process questions and answers using RAG
 def process_questions_and_answers(input_file_path, output_file_path, filter):
     # Load JSON data from input file
-    print("yahiiooooo")
     data = load_json(input_file_path)
     #vector_database = vector_data_base_createion(docs_processed)
     # Iterate over each question and answer pair
@@ -92,11 +115,11 @@ def process_questions_and_answers(input_file_path, output_file_path, filter):
         answer, relevant_docs, final_prompt, rag_key = answer_with_rag(
             question, READER_LLM, vector_database, product_id, question_key, answer_key, filter
         )
-        print("$$$$$$$")
-        print("anser from rag: ", rag_key)
-        print("answer_key: ",answer_key)
-        print("question_key: ", question_key)
-        print("$$$$$$$$")
+        #print("$$$$$$$")
+        #print("anser from rag: ", rag_key)
+        #print("answer_key: ",answer_key)
+        ##print("question_key: ", question_key)
+        #print("$$$$$$$$")
         if rag_key == answer_key:
             print("rag key is same as anaswer key")
             search_pair= {"answer": "Not needed"}
@@ -108,7 +131,6 @@ def process_questions_and_answers(input_file_path, output_file_path, filter):
         item["answer_from_rag"] = answer
         item["final_prompt"] = final_prompt
         item["search_answer"] = search_pair["answer"]
-      
 
 
         save_json_append([item], output_file_path)  # Append mode
@@ -128,16 +150,12 @@ def answer_with_rag(
     num_retrieved_docs: int = 1,
     num_docs_final: int = 1,
 ):
-    # Gather documents with retriever
-    print("=> Retrieving documents...")
-    # relevant_docs = knowledge_index.similarity_search(
-    #     query=question, k=num_retrieved_docs
-    # )
-    print("question:",question)
-    print("productId:",product_id)
+    #print("=> Retrieving documents...")
+    #print("question:",question)
+    #print("productId:",product_id)
 
     if filter=="1":
-        print("i am in filter retrieval")
+        #print("i am in filter retrieval")
         relevant_docs = knowledge_index.similarity_search(
             query=question,
             filter=dict(productId=product_id),
@@ -145,13 +163,13 @@ def answer_with_rag(
             fetch_k=1000
         )
     else:
-        print("i am in non filter retrieval")
+        #print("i am in non filter retrieval")
         relevant_docs = knowledge_index.similarity_search(
             query=question,
             k=1
         )
 
-    print("zain relevant_docs:",relevant_docs)
+    #print("zain relevant_docs:",relevant_docs)
     #relevant_docs, metadata = [(doc.page_content, doc.metadata) for doc in relevant_docs]  # keep only the text
 
     #relevant_docs = relevant_docs[:num_docs_final]
@@ -165,25 +183,25 @@ def answer_with_rag(
         metadata = relevant_doc.metadata
         rag_reviewer_id = metadata.get("reviewerID", None)
         rag_product_id = metadata.get("productId", None)
-        print("rag_reviewer_id: ",rag_reviewer_id)
-        print("rag_product_id: ",rag_product_id)
+        #print("rag_reviewer_id: ",rag_reviewer_id)
+        #print("rag_product_id: ",rag_product_id)
         rag_key = rag_product_id+"_"+rag_reviewer_id
-        print("rag_key: ",rag_key)
+        #print("rag_key: ",rag_key)
     else:
         print("no relevant_doc")
 
 
-    final_prompt = prompt_in_chat_format.format(question=question, context=relevant_docs)
+    final_prompt = prompt_in_chat_format.format(question=question, context=relevant_page_content)
     #final_prompt = prompt2.format(question=question, context=relevant_docs)
 
-    print("final promp:", final_prompt)
-    print("relevant_docs:",relevant_docs)
-    # Redact an answer
-    print("=> Generating answer...")
+    #print("final promp:", final_prompt)
+    #print("relevant_docs:",relevant_docs)
+    ## Redact an answer
+    #print("=> Generating answer...")
     answer = llm(final_prompt)[0]["generated_text"]
-    pprint.pprint(answer)
-    print("#############")
-    print("\n\n\n\n\n")
+    #pprint.pprint(answer)
+    #print("#############")
+    #print("\n\n\n\n\n")
 
     # Check if retrieved document matches the answer
     # _, _, neg_qa_pairs = read_json(neg_qa_pairs_file)
@@ -200,7 +218,7 @@ def answer_with_rag(
 
 
 # # Process questions and answers using RAG
-def main():
+def main_run():
     args = sys.argv[1:]
     output_file_name = args[0]
     filter = args[1]
@@ -215,4 +233,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_run()

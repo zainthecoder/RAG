@@ -34,9 +34,9 @@ bnb_config = BitsAndBytesConfig(
 
 READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
 model = AutoModelForCausalLM.from_pretrained(
-    READER_MODEL_NAME, quantization_config=bnb_config
+    READER_MODEL_NAME, quantization_config=bnb_config, device_map="auto"
 )
-tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME,device_map="auto")
 
 READER_LLM = pipeline(
         model=model,

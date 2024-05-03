@@ -59,7 +59,7 @@ def extract_question_answer_pairs(data):
 
                 unique_ids.add(key_question)
                 unique_ids.add(key_answer)
-                if len(unique_ids) >= 20:
+                if len(unique_ids) >= 2000:
                     return qa_pairs, unique_ids
 
     return qa_pairs, unique_ids
