@@ -49,3 +49,12 @@ READER_LLM = pipeline(
         max_new_tokens=500,
 )
 EMBEDDING_MODEL_NAME = "thenlper/gte-small"
+
+conversation_mapping = {
+    "Qpos1A_Apos1A": "Positive",
+    "Oneg1A_Opos1A": "Positive",
+    "Oneg1A_Opos1B": "Positive",
+    "Oneg1A_Opos2A": "Switch_Postive",
+    "Opos1B_Opos2B": "Switch_Positive",
+    "Opos1B_Oneg2B": "Switch_Negative"
+}

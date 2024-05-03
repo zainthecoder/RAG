@@ -4,11 +4,12 @@ import pprint
 from nanoid import generate
 import pickle
 
-#hi bro
 def extract_question_answer_pairs(data):
     
     qa_pairs = []
     unique_ids = set()
+    unique_conv_types = set()
+
 
     for product_key, product_data in data.items():
         #print(product_key)
@@ -34,8 +35,10 @@ def extract_question_answer_pairs(data):
                             "key_question":key_question,
                             "key_answer":key_answer,
                             "question":question,
-                            "answer":answer
+                            "answer":answer,
+                            "label": "Qpos1A_Apos1A"
                         })
+                    unique_conv_types.add(conv_type)
                 else:
                     counter = 1
                     for pair_key, pair_data in conv_data.items():
@@ -54,15 +57,18 @@ def extract_question_answer_pairs(data):
                             "key_question":key_question,
                             "key_answer":key_answer,
                             "question":question,
-                            "answer":answer
+                            "answer":answer,
+                            "label": conv_type
                         })
+                    unique_conv_types.add(conv_type)
 
                 unique_ids.add(key_question)
                 unique_ids.add(key_answer)
                 if len(unique_ids) >= 2000:
-                    return qa_pairs, unique_ids
+                    return qa_pairs, unique_ids, unique_conv_types
 
-    return qa_pairs, unique_ids
+
+    return qa_pairs, unique_ids, unique_conv_types
 
 def load_json(file_path):
     """Load data from a JSON file."""
@@ -86,7 +92,7 @@ data = load_json(file_path)
 print("zainnnn")
 #pprint.pprint(data)
     # Create a Hugging Face dataset
-qa_pairs, unique_ids = extract_question_answer_pairs(data)
+qa_pairs, unique_ids, unique_conv_types = extract_question_answer_pairs(data)
 
 # File path to save the Python list
 file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_qa_pairs.json"
@@ -105,7 +111,7 @@ with open(file_path, 'wb') as file:
     # Serialize and write the variable to the file
     pickle.dump(unique_ids, file)
     
-
+print("unique conv type: ", unique_conv_types)
 
  # "B00836Y6B2": {
  #        "Opos1B_Opos1B2_only_agreement": {

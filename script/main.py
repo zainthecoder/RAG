@@ -18,6 +18,8 @@ import json
 from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import gzip
+from transformers import AutoTokenizer
+
 
 EMBEDDING_MODEL_NAME = "thenlper/gte-small"
 
@@ -170,6 +172,9 @@ def preprocess_documents(ds: Dataset):
 
 
 def split_documents(raw_docs):
+
+    #TODO: Test the AutoTokenizer change s]
+
     """Split documents using Langchain's RecursiveCharacterTextSplitter."""
     markdown_separators = [
         "\n#{1,6} ",
@@ -184,8 +189,9 @@ def split_documents(raw_docs):
     ]
 
     #keep chunk size bigger than the longest review.
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=10000,
+    text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+        AutoTokenizer.from_pretrained(EMBEDDING_MODEL_NAME),
+        chunk_size=2000,
         chunk_overlap=100,
         add_start_index=True,
         strip_whitespace=True,

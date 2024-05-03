@@ -113,12 +113,17 @@ def answer_with_rag(
     #print("=> Retrieving documents...")
     #print("question:",question)
     #print("productId:",product_id)
+    #retrieved_docs = KNOWLEDGE_VECTOR_DATABASE.similarity_search(query=user_query, k=1,fetch_k=1000, filter=dict(source="huggingface/evaluate/blob/main/docs/source/choosing_a_metric.mdx", age=1))
+
 
     if filter=="1":
         #print("i am in filter retrieval")
         relevant_docs = knowledge_index.similarity_search(
             query=question,
-            filter=dict(productId=product_id),
+            filter=dict(
+                productId=product_id,
+                sentiment = sentiment
+            ),
             k=1,
             fetch_k=1000
         )
