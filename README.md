@@ -15,3 +15,7 @@ input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_qa_pairs.json"
 
 
 I need to create the vector database seperate from the everytime script run
+
+
+While you screens are running, if you change code, it will affect all the screens.
+

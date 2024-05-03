@@ -21,10 +21,8 @@ from config import (
     READER_LLM
     )
 
-#input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/qa_pairs.json"
-input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_qa_pairs.json"
-#output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/output_rag.json"
-output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_output_rag.json"
+vector_database = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
+
 
 
 
@@ -60,39 +58,58 @@ def save_json_append(data, file_path):
         f.write('\n')  # Write newline character to separate JSON objects
 
 
-def search_neg_qa_pairs(product_id, review_id, neg_qa_pairs):
-    for pair in neg_qa_pairs:
-        key_question_product_id, key_question_review_id, _, _ = pair["key_question"].split("_")
-        key_answer_product_id, key_answer_review_id, _, _ = pair["key_answer"].split("_")
+def search_neg_qa_pairs(data, rag_key, question_key):
+    for item in data:
+        # print("$$$$$")
+        # print("item: ",item)
+        # print("rag_key: ",rag_key)
+        # print("question_key: ",question_key)
+        # print("$$$$$$")
 
-        if key_question_product_id == product_id and key_question_review_id == review_id:
-            return pair
-        elif key_answer_product_id == product_id and key_answer_review_id == review_id:
-            return pair
-
-    return None
-
+        if  item["key_question"] == question_key and item["key_answer"] == rag_key:
+            print("we find the pair")
+            print(item)
+            print("&&&&&")
+            print(item)
+            return item
+    print("we did not find , we will return, NOT PRESENT")
+    return {"answer": "Not present"}
 
 # Function to process questions and answers using RAG
-def process_questions_and_answers(input_file_path, output_file_path):
+def process_questions_and_answers(input_file_path, output_file_path, filter):
     # Load JSON data from input file
     print("yahiiooooo")
     data = load_json(input_file_path)
     #vector_database = vector_data_base_createion(docs_processed)
-    vector_database = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
     # Iterate over each question and answer pair
     for item in data:
         question = item["question"]
         product_id = item["key_question"].split('_')[0]
+        question_key = item["key_question"]
+        answer_key = item["key_answer"]
 
-        answer, relevant_docs, final_prompt = answer_with_rag(
-            question, READER_LLM, vector_database, product_id
+
+        answer, relevant_docs, final_prompt, rag_key = answer_with_rag(
+            question, READER_LLM, vector_database, product_id, question_key, answer_key, filter
         )
-
+        print("$$$$$$$")
+        print("anser from rag: ", rag_key)
+        print("answer_key: ",answer_key)
+        print("question_key: ", question_key)
+        print("$$$$$$$$")
+        if rag_key == answer_key:
+            print("rag key is same as anaswer key")
+            search_pair= {"answer": "Not needed"}
+        else:    
+            print("The rag is different, now we will search")
+            search_pair = search_neg_qa_pairs(data, rag_key, question_key)
 
         answer = answer
         item["answer_from_rag"] = answer
         item["final_prompt"] = final_prompt
+        item["search_answer"] = search_pair["answer"]
+      
+
 
         save_json_append([item], output_file_path)  # Append mode
 
@@ -105,6 +122,9 @@ def answer_with_rag(
     llm,
     knowledge_index,
     product_id,
+    question_key, 
+    answer_key,
+    filter,
     num_retrieved_docs: int = 1,
     num_docs_final: int = 1,
 ):
@@ -115,13 +135,22 @@ def answer_with_rag(
     # )
     print("question:",question)
     print("productId:",product_id)
-    relevant_docs = knowledge_index.similarity_search(
-        query=question,
-        #filter=dict(productId=product_id),
-        k=1
-        #fetch_k=1000
+
+    if filter=="1":
+        print("i am in filter retrieval")
+        relevant_docs = knowledge_index.similarity_search(
+            query=question,
+            filter=dict(productId=product_id),
+            k=1,
+            fetch_k=1000
         )
-    
+    else:
+        print("i am in non filter retrieval")
+        relevant_docs = knowledge_index.similarity_search(
+            query=question,
+            k=1
+        )
+
     print("zain relevant_docs:",relevant_docs)
     #relevant_docs, metadata = [(doc.page_content, doc.metadata) for doc in relevant_docs]  # keep only the text
 
@@ -138,6 +167,8 @@ def answer_with_rag(
     rag_product_id = metadata.get("productId", None)
     print("rag_reviewer_id: ",rag_reviewer_id)
     print("rag_product_id: ",rag_product_id)
+    rag_key = rag_product_id+"_"+rag_reviewer_id
+    print("rag_key: ",rag_key)
 
 
     final_prompt = prompt_in_chat_format.format(question=question, context=relevant_docs)
@@ -152,8 +183,7 @@ def answer_with_rag(
     print("#############")
     print("\n\n\n\n\n")
 
-
-    # # Check if retrieved document matches the answer
+    # Check if retrieved document matches the answer
     # _, _, neg_qa_pairs = read_json(neg_qa_pairs_file)
     # matching_pair = search_neg_qa_pairs(product_id, review_id, neg_qa_pairs)
 
@@ -162,7 +192,7 @@ def answer_with_rag(
     # else:
     #     return "No matching pair found in neg_qa_pairs.json", None, answer
 
-    return answer, relevant_docs, final_prompt
+    return answer, relevant_docs, final_prompt, rag_key
 
 
 
@@ -171,9 +201,14 @@ def answer_with_rag(
 def main():
     args = sys.argv[1:]
     output_file_name = args[0]
+    filter = args[1]
+    print("filter: ",filter)
     output_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/" + output_file_name
     print(output_file_path)
-    process_questions_and_answers(input_file_path, output_file_path)
+
+    input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/combined_qa_pairs.json"
+    #input_file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/neg_qa_pairs.json"
+    process_questions_and_answers(input_file_path, output_file_path,filter)
 
 
 

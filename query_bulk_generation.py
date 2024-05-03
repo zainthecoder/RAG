@@ -22,10 +22,10 @@ def extract_question_answer_pairs(data):
                         #pprint.pprint(pair_data)
                         if 'Qpos1A' in pair_key:
                             question = pair_data['Question']
-                            key_question = pair_data['Labels']['Key']
+                            key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
-                            key_answer = pair_data['Labels']['Key']
+                            key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
 
                     unique_id=generate(size=10) 
                     qa_pairs.append({
@@ -42,11 +42,11 @@ def extract_question_answer_pairs(data):
                         #pprint.pprint(pair_data)
                         if counter == 1:
                             question = pair_data['Opinion']
-                            key_question = pair_data['Labels']['Key']
+                            key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             counter += 1
                         elif counter == 2:
                             answer = pair_data['Opinion']
-                            key_answer = pair_data['Labels']['Key']
+                            key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                     unique_id=generate(size=10)
                     qa_pairs.append({
                             "unique_id":unique_id,
@@ -69,7 +69,11 @@ def load_json(file_path):
 
 
 # File path to your JSON file
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
+#file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_pos.json"
+
+#file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/dataset.json"
+
 
 # Load data from JSON file
 data = load_json(file_path)
@@ -79,7 +83,7 @@ print("zainnnn")
 qa_pairs = extract_question_answer_pairs(data)
 
 # File path to save the Python list
-file_path = "neg_qa_pairs.json"
+file_path = "pos_qa_pairs.json"
 
 # Save qa_pairs as a Python list to a JSON file
 with open(file_path, "w") as f:
