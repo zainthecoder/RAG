@@ -1,26 +1,23 @@
-from tqdm.notebook import tqdm
 import pandas as pd
-from typing import Optional, List, Tuple
+from typing import List
 from datasets import Dataset
-import matplotlib.pyplot as plt
 import locale
-
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_community.vectorstores import FAISS
-
-import pdb
 from transformers import pipeline
 import torch
-import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-
-READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
-#READER_MODEL_NAME = "gpt2-medium"
-
-
-
-#hello zain
+import json
+import pandas as pd
+from typing import List, Tuple
+from datasets import Dataset
+import locale
+import os
+import json
+from langchain.docstore.document import Document as LangchainDocument
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import gzip
 
 EMBEDDING_MODEL_NAME = "thenlper/gte-small"
 
@@ -38,34 +35,6 @@ def vector_data_base_createion(docs_processed):
     print("saving the data index")
     db.save_local("faiss_index")
     return db
-
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16,
-)
-model = AutoModelForCausalLM.from_pretrained(
-    READER_MODEL_NAME, quantization_config=bnb_config
-)
-tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME)
-
-
-
-import json
-import pandas as pd
-from typing import List, Tuple
-from datasets import Dataset
-import locale
-import os
-import json
-import pdb
-from langchain.docstore.document import Document as LangchainDocument
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-import tempfile
-import gzip
 
 prompt_in_chat_format = """
 Answer the question only based on the following context:
@@ -175,20 +144,14 @@ def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
     #review_texts_file = "/content/drive/MyDrive/RAG/reviews_text_file.txt"
     ##punctuated_review_texts_file = "/content/drive/MyDrive/RAG/punctuated_reviews.txt"
     #review_texts_from_model = "/content/drive/MyDrive/RAG/reviews_text_from_model.txt"
-
     # Save review texts to a text file, with f.write(review + "#@#@#\n")
     #save_reviews_to_file(review_texts, review_texts_file)
-
     #format_reviews(review_texts_from_model, punctuated_review_texts_file)
-
-
     #Read punctuated reviews from the text file
     #punctuated_reviews = []
     #with open(punctuated_review_texts_file, "r") as f:
     ##    for line in f:
     #        punctuated_reviews.append(line.strip())
-
-    #print(data)
     product_ids = [item["asin"] for item in data]
     reviewer_ids = [item["reviewerID"] for item in data]
     ds = Dataset.from_dict({"reviewText": review_texts, "asin": product_ids, "reviewerID": reviewer_ids})
@@ -239,11 +202,9 @@ def split_documents(raw_docs):
 def main():
     pd.set_option("display.max_colwidth", None)
     locale.getpreferredencoding = lambda: "UTF-8"
-    #pdb.set_trace()
 
     # File path to your JSON file
     file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_reviews.json"
-
     #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
 
 
@@ -255,27 +216,11 @@ def main():
     ds = create_huggingface_dataset_with_punctuation(data)
     print(ds[0])
     #print(ds[-1])
-
-   
-
     # Preprocess documents for Langchain
     raw_docs = preprocess_documents(ds)
-    #pprint.pprint(raw_docs)
-
-
     print("Document after chunking")
-    #Split documents using Langchain's text splitter: Chunking
     docs_processed = split_documents(raw_docs)
-    #pprint.pprint(docs_processed)
-
-    print("zain is here againnn")
-
     db = vector_data_base_createion(docs_processed)
-
-
-    #new_db = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
-
-
 
 if __name__ == "__main__":
     main()

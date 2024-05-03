@@ -1,21 +1,8 @@
-from tqdm.notebook import tqdm
-import pandas as pd
-from typing import Optional, List, Tuple
-from datasets import Dataset
-import matplotlib.pyplot as plt
-import locale
 import json
 import sys
-
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_community.vectorstores import FAISS
-
-import pdb
 from transformers import pipeline
-import torch
-import pprint
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+import pandas
 from config import (
     embedding_model,
     READER_LLM
@@ -57,29 +44,6 @@ def save_json_append(data, file_path):
         json.dump(data, f)
         f.write('\n')  # Write newline character to separate JSON objects
 
-
-# def search_neg_qa_pairs(data, rag_key, question_key):
-#     for item in data:        
-#         print(item)
-#         if  item["key_question"] == question_key and item["key_answer"] == rag_key:
-#             return item
-#     print("we did not find , we will return, NOT PRESENT")
-#     return {"answer": "Not present"}
-# def search_neg_qa_pairs(data, rag_key, question_key):
-#     lookup_dict = {}
-#     for item in data:
-#         key_pair = (item["key_question"], item["key_answer"])
-#         lookup_dict[key_pair] = item
-        
-#     key_pair_to_find = (question_key, rag_key)
-#     if key_pair_to_find in lookup_dict:
-#         return lookup_dict[key_pair_to_find]
-#     else:
-#         print("Not present")
-#         return {"answer": "Not present"}
-
-import pandas
-
 def search_neg_qa_pairs(data, rag_key, question_key):
     # Convert the list of dictionaries to a cuDF dataframe
     df = pandas.DataFrame(data)
@@ -115,11 +79,7 @@ def process_questions_and_answers(input_file_path, output_file_path, filter):
         answer, relevant_docs, final_prompt, rag_key = answer_with_rag(
             question, READER_LLM, vector_database, product_id, question_key, answer_key, filter
         )
-        #print("$$$$$$$")
-        #print("anser from rag: ", rag_key)
-        #print("answer_key: ",answer_key)
-        ##print("question_key: ", question_key)
-        #print("$$$$$$$$")
+    
         if rag_key == answer_key:
             print("rag key is same as anaswer key")
             search_pair= {"answer": "Not needed"}
