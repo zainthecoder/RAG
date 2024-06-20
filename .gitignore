@@ -1,2 +1,7 @@
 .env2
 .env
+100_blocks_neg.json
+100_blocks_pos.json
+__pycache*
+Cell_Phones_and_Accessories_5.json.gz
+.DS_Store

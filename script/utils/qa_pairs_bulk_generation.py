@@ -2,12 +2,14 @@ import json
 import os
 import pprint
 from nanoid import generate
+import pickle
 
-#hi bro
 def extract_question_answer_pairs(data):
     
     qa_pairs = []
-    
+    unique_ids = set()
+    unique_conv_types = set()
+
 
     for product_key, product_data in data.items():
         #print(product_key)
@@ -22,10 +24,10 @@ def extract_question_answer_pairs(data):
                         #pprint.pprint(pair_data)
                         if 'Qpos1A' in pair_key:
                             question = pair_data['Question']
-                            key_question = pair_data['Labels']['Key']
+                            key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
-                            key_answer = pair_data['Labels']['Key']
+                            key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
 
                     unique_id=generate(size=10) 
                     qa_pairs.append({
@@ -33,8 +35,10 @@ def extract_question_answer_pairs(data):
                             "key_question":key_question,
                             "key_answer":key_answer,
                             "question":question,
-                            "answer":answer
+                            "answer":answer,
+                            "label": "Qpos1A_Apos1A"
                         })
+                    unique_conv_types.add(conv_type)
                 else:
                     counter = 1
                     for pair_key, pair_data in conv_data.items():
@@ -42,21 +46,29 @@ def extract_question_answer_pairs(data):
                         #pprint.pprint(pair_data)
                         if counter == 1:
                             question = pair_data['Opinion']
-                            key_question = pair_data['Labels']['Key']
+                            key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             counter += 1
                         elif counter == 2:
                             answer = pair_data['Opinion']
-                            key_answer = pair_data['Labels']['Key']
+                            key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                     unique_id=generate(size=10)
                     qa_pairs.append({
                             "unique_id":unique_id,
                             "key_question":key_question,
                             "key_answer":key_answer,
                             "question":question,
-                            "answer":answer
+                            "answer":answer,
+                            "label": conv_type
                         })
+                    unique_conv_types.add(conv_type)
 
-    return qa_pairs
+                unique_ids.add(key_question)
+                unique_ids.add(key_answer)
+                if len(unique_ids) >= 2000:
+                    return qa_pairs, unique_ids, unique_conv_types
+
+
+    return qa_pairs, unique_ids, unique_conv_types
 
 def load_json(file_path):
     """Load data from a JSON file."""
@@ -69,21 +81,37 @@ def load_json(file_path):
 
 
 # File path to your JSON file
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
+#file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/100_blocks_neg.json"
+
+#file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/dataset.json"
+
 
 # Load data from JSON file
 data = load_json(file_path)
 print("zainnnn")
 #pprint.pprint(data)
     # Create a Hugging Face dataset
-qa_pairs = extract_question_answer_pairs(data)
+qa_pairs, unique_ids, unique_conv_types = extract_question_answer_pairs(data)
 
 # File path to save the Python list
-file_path = "neg_qa_pairs.json"
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_qa_pairs.json"
 
 # Save qa_pairs as a Python list to a JSON file
 with open(file_path, "w") as f:
     json.dump(qa_pairs, f)
+
+
+# File path to save the Python list
+file_path = "../../data/unique_ids.pickle"
+
+
+# Open the file in binary mode
+with open(file_path, 'wb') as file:
+    # Serialize and write the variable to the file
+    pickle.dump(unique_ids, file)
+    
+print("unique conv type: ", unique_conv_types)
 
  # "B00836Y6B2": {
  #        "Opos1B_Opos1B2_only_agreement": {
