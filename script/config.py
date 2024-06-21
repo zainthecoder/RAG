@@ -15,15 +15,10 @@ from transformers import pipeline
 import torch
 import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+access_token = "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"
 
-EMBEDDING_MODEL_NAME = "thenlper/gte-small"
 
-embedding_model = HuggingFaceEmbeddings(
-    model_name=EMBEDDING_MODEL_NAME,
-    multi_process=True,
-    model_kwargs={"device": "cuda"},
-    encode_kwargs={"normalize_embeddings": True},  # set True for cosine similarity
-)
+EMBEDDING_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -32,9 +27,16 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_compute_dtype=torch.bfloat16,
 )
 
-READER_MODEL_NAME = "HuggingFaceH4/zephyr-7b-beta"
+embedding_model = HuggingFaceEmbeddings(
+    model_name=EMBEDDING_MODEL_NAME,
+    multi_process=True,
+    model_kwargs={"device": "cuda", "token":access_token},
+    encode_kwargs={"normalize_embeddings": True, "precision":"float32"},  # set True for cosine similarity
+)
+
+READER_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
 model = AutoModelForCausalLM.from_pretrained(
-    READER_MODEL_NAME, quantization_config=bnb_config, device_map="auto"
+    READER_MODEL_NAME, quantization_config=bnb_config, device_map="auto",token=access_token
 )
 tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME,device_map="auto")
 

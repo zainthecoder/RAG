@@ -19,24 +19,28 @@ from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import gzip
 from transformers import AutoTokenizer
+from config import (
+    embedding_model,
+    tokenizer
+    )
 
+def create_vector_db(docs_processed):
+    """
+    Create a FAISS vector database from processed documents and save the index locally.
 
-EMBEDDING_MODEL_NAME = "thenlper/gte-small"
+    Args:
+        docs_processed (list): A list of processed documents to be indexed.
 
-embedding_model = HuggingFaceEmbeddings(
-    model_name=EMBEDDING_MODEL_NAME,
-    multi_process=True,
-    model_kwargs={"device": "cuda"},
-    encode_kwargs={"normalize_embeddings": True},  # set True for cosine similarity
-)
-
-def vector_data_base_createion(docs_processed):
+    Returns:
+        FAISS: The FAISS database created from the documents.
+    """
     db = FAISS.from_documents(
         docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
     )
     print("saving the data index")
     db.save_local("faiss_index")
     return db
+
 
 prompt_in_chat_format = """
 Answer the question only based on the following context:
@@ -139,21 +143,10 @@ def format_reviews(input_file: str, output_file: str) -> None:
 
 
 
-def create_huggingface_dataset_with_punctuation(data: List[dict]) -> Dataset:
+def create_dataset(data: List[dict]) -> Dataset:
     """Create a Hugging Face dataset from JSON data with punctuated reviews."""
 
     review_texts = [item.get('reviewText', " ")  for item in data]
-    #review_texts_file = "/content/drive/MyDrive/RAG/reviews_text_file.txt"
-    ##punctuated_review_texts_file = "/content/drive/MyDrive/RAG/punctuated_reviews.txt"
-    #review_texts_from_model = "/content/drive/MyDrive/RAG/reviews_text_from_model.txt"
-    # Save review texts to a text file, with f.write(review + "#@#@#\n")
-    #save_reviews_to_file(review_texts, review_texts_file)
-    #format_reviews(review_texts_from_model, punctuated_review_texts_file)
-    #Read punctuated reviews from the text file
-    #punctuated_reviews = []
-    #with open(punctuated_review_texts_file, "r") as f:
-    ##    for line in f:
-    #        punctuated_reviews.append(line.strip())
     product_ids = [item["asin"] for item in data]
     reviewer_ids = [item["reviewerID"] for item in data]
     ds = Dataset.from_dict({"reviewText": review_texts, "asin": product_ids, "reviewerID": reviewer_ids})
@@ -171,9 +164,9 @@ def preprocess_documents(ds: Dataset):
     return raw_knowledge_base
 
 
-def split_documents(raw_docs):
+def chunk_documents(raw_docs):
 
-    #TODO: Test the AutoTokenizer change s]
+    #TODO: Test the AutoTokenizer change
 
     """Split documents using Langchain's RecursiveCharacterTextSplitter."""
     markdown_separators = [
@@ -190,7 +183,7 @@ def split_documents(raw_docs):
 
     #keep chunk size bigger than the longest review.
     text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-        AutoTokenizer.from_pretrained(EMBEDDING_MODEL_NAME),
+        tokenizer,
         chunk_size=2000,
         chunk_overlap=100,
         add_start_index=True,
@@ -218,15 +211,17 @@ def main():
     data = load_json(file_path)
     #data = parse(file_path)
 
-    # Create a Hugging Face dataset
-    ds = create_huggingface_dataset_with_punctuation(data)
-    print(ds[0])
-    #print(ds[-1])
+    # Create dataset
+    ds = create_dataset(data)
+    
     # Preprocess documents for Langchain
     raw_docs = preprocess_documents(ds)
-    print("Document after chunking")
-    docs_processed = split_documents(raw_docs)
-    db = vector_data_base_createion(docs_processed)
+    
+    # Chunking
+    docs_processed = chunk_documents(raw_docs)
+
+    # Create Vector Database
+    create_vector_db(docs_processed)
 
 if __name__ == "__main__":
     main()
