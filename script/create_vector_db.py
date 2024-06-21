@@ -19,10 +19,9 @@ from langchain.docstore.document import Document as LangchainDocument
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import gzip
 from transformers import AutoTokenizer
-from config import (
-    embedding_model,
-    tokenizer
-    )
+
+from config import get_embedding_model, get_reader_model, get_tokenizer
+
 
 def create_vector_db(docs_processed):
     """
@@ -35,7 +34,7 @@ def create_vector_db(docs_processed):
         FAISS: The FAISS database created from the documents.
     """
     db = FAISS.from_documents(
-        docs_processed, embedding_model, distance_strategy=DistanceStrategy.COSINE
+        docs_processed, get_embedding_model(), distance_strategy=DistanceStrategy.COSINE
     )
     print("saving the data index")
     db.save_local("faiss_index")
@@ -149,7 +148,8 @@ def create_dataset(data: List[dict]) -> Dataset:
     review_texts = [item.get('reviewText', " ")  for item in data]
     product_ids = [item["asin"] for item in data]
     reviewer_ids = [item["reviewerID"] for item in data]
-    ds = Dataset.from_dict({"reviewText": review_texts, "asin": product_ids, "reviewerID": reviewer_ids})
+    sentiments = [item["sentiment"] for item in data]
+    ds = Dataset.from_dict({"reviewText": review_texts, "asin": product_ids, "reviewerID": reviewer_ids, "sentiment": sentiments})
     return ds
 
 def preprocess_documents(ds: Dataset):
@@ -158,7 +158,7 @@ def preprocess_documents(ds: Dataset):
 		and make it langchain documents
     """
     raw_knowledge_base = [
-        LangchainDocument(page_content=doc["reviewText"], metadata={"productId": doc["asin"], "reviewerID": doc["reviewerID"]})
+        LangchainDocument(page_content=doc["reviewText"], metadata={"productId": doc["asin"], "reviewerID": doc["reviewerID"], "sentiment" : doc["sentiment"]})
         for doc in ds
     ]
     return raw_knowledge_base
@@ -183,7 +183,7 @@ def chunk_documents(raw_docs):
 
     #keep chunk size bigger than the longest review.
     text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-        tokenizer,
+        get_tokenizer(),
         chunk_size=2000,
         chunk_overlap=100,
         add_start_index=True,

@@ -4,12 +4,10 @@ import sys
 import os
 from langchain_community.vectorstores import FAISS
 import pandas
-from config import (
-    embedding_model,
-    READER_LLM
-    )
+from config import get_embedding_model, get_reader_model
 
-vector_database = FAISS.load_local("faiss_index", embedding_model, allow_dangerous_deserialization=True)
+
+vector_database = FAISS.load_local("faiss_index", get_embedding_model(), allow_dangerous_deserialization=True)
 
 prompt_in_chat_format = """
 Answer the question only based on the following context:
@@ -62,11 +60,12 @@ def search_neg_qa_pairs(data, rag_key, question_key):
 
 
 # Function to process questions and answers using RAG
-def process_questions_and_answers(input_file_path, output_file_path, retrieval_filter):
+def process_questions_and_answers(input_file_path, output_file_path, apply_filter):
     # Load JSON data from input file
     data = load_json(input_file_path)
-    
+    print(input_file_path)
     # Iterate over each question and answer pair
+    counter = 0
     for item in data:
         question = item["question"]
         product_id = item["key_question"].split('_')[0]
@@ -74,7 +73,7 @@ def process_questions_and_answers(input_file_path, output_file_path, retrieval_f
         answer_key = item["key_answer"]
 
         answer, relevant_docs, final_prompt, rag_key = answer_with_rag(
-            question, READER_LLM, vector_database, product_id, question_key, answer_key, retrieval_filter
+            question, get_reader_model(), vector_database, product_id, question_key, answer_key, apply_filter
         )
 
         if rag_key == answer_key:
@@ -94,6 +93,10 @@ def process_questions_and_answers(input_file_path, output_file_path, retrieval_f
         logging.info(f"Relevant Document for the question: {question} are {relevant_docs}")
         save_json_append([item], output_file_path)  # Append mode
 
+        counter += 1
+        if counter > 3:
+            break
+
     logging.info(f"Processed data saved to {output_file_path}")
 
 
@@ -104,10 +107,11 @@ def answer_with_rag(
     product_id,
     question_key, 
     answer_key,
-    retrieval_filter=False,
+    apply_filter=False,
     num_retrieved_docs: int = 1,
     num_docs_final: int = 1,
 ):
+    logging.info("\n\n\n")
     logging.info("=> Retrieving documents...")
     logging.info("question: %s", question)
     logging.info("productId: %s", product_id)
@@ -117,12 +121,11 @@ def answer_with_rag(
 
     # Retrieve documents based on the filter criteria
     try:
-        if retrieval_filter:
+        if apply_filter:
             relevant_docs = knowledge_index.similarity_search(
                 query=question,
                 filter=dict(
                     productId=product_id,
-                    sentiment="sentiment"
                 ),
                 k=num_retrieved_docs,
                 fetch_k=1000
@@ -132,6 +135,8 @@ def answer_with_rag(
                 query=question,
                 k=num_retrieved_docs
             )
+
+        logging.info(f"relevant_docs: %s",relevant_docs)
 
         if relevant_docs:
             # Select the most relevant document
@@ -168,16 +173,16 @@ def main_run():
     """
     logging.basicConfig(level=logging.INFO)
 
-    # Check if filter option is provided
-    if len(sys.argv) < 2:
-        logging.error("No filter option provided. Usage: python script_name.py <filter_option>")
+    if len(sys.argv) < 3:
+        logging.error("Insufficient arguments provided. Usage: python script_name.py <filter_option> <apply_filter>")
         sys.exit(1)
 
     retrieval_filter = sys.argv[1]
-    logging.info("Filter: %s", retrieval_filter)
+    apply_filter = sys.argv[2].lower() == 'true'
+    logging.info("Filter: %s", apply_filter)
 
     base_dir = "/home/stud/abedinz1/localDisk/RAG/RAG"
-    output_file_name = "rag_response_{}.txt".format(retrieval_filter)
+    output_file_name = "rag_response_{}.txt".format(apply_filter)
     output_file_path = os.path.join(base_dir, "results", output_file_name)
     logging.info("Output file path: %s", output_file_path)
 
@@ -185,7 +190,7 @@ def main_run():
 
     # Process questions and answers
     try:
-        process_questions_and_answers(input_file_path, output_file_path, retrieval_filter)
+        process_questions_and_answers(input_file_path, output_file_path, apply_filter)
         logging.info("Processing completed successfully.")
     except Exception as e:
         logging.error("Failed to process questions and answers: %s", e)
