@@ -4,7 +4,7 @@ import sys
 import os
 from langchain_community.vectorstores import FAISS
 import pandas
-from config import get_embedding_model, get_reader_model
+from config import get_embedding_model, get_reader_model, conversation_mapping
 
 
 vector_database = FAISS.load_local("faiss_index", get_embedding_model(), allow_dangerous_deserialization=True)
@@ -71,9 +71,11 @@ def process_questions_and_answers(input_file_path, output_file_path, apply_filte
         product_id = item["key_question"].split('_')[0]
         question_key = item["key_question"]
         answer_key = item["key_answer"]
+        label = item["label"]
+
 
         answer, relevant_docs, final_prompt, rag_key = answer_with_rag(
-            question, get_reader_model(), vector_database, product_id, question_key, answer_key, apply_filter
+            question, get_reader_model(), vector_database, product_id, question_key, answer_key, apply_filter, conversation_mapping[label]
         )
 
         if rag_key == answer_key:
@@ -108,6 +110,7 @@ def answer_with_rag(
     question_key, 
     answer_key,
     apply_filter=False,
+    sentiment="positive",
     num_retrieved_docs: int = 1,
     num_docs_final: int = 1,
 ):
@@ -115,6 +118,7 @@ def answer_with_rag(
     logging.info("=> Retrieving documents...")
     logging.info("question: %s", question)
     logging.info("productId: %s", product_id)
+    logging.info("sentiment: %s", sentiment)
 
     # Set the default empty relevant page content
     relevant_page_content = ""
@@ -126,6 +130,7 @@ def answer_with_rag(
                 query=question,
                 filter=dict(
                     productId=product_id,
+                    sentiment=sentiment
                 ),
                 k=num_retrieved_docs,
                 fetch_k=1000
