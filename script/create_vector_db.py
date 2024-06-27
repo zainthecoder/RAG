@@ -40,35 +40,11 @@ def create_vector_db(docs_processed):
     db.save_local("faiss_index")
     return db
 
-
-prompt_in_chat_format = """
-Answer the question only based on the following context:
-Give a short answer and don't mention "based on the provided context"
------
-
-
-Context: {context}
-
----
-
-Answer the question based on the above context: 
-Question: {question}
-"""
-
-
 # Define a function to load JSON data from a file
 def load_json(file_path):
     with open(file_path, "r") as f:
         data = json.load(f)
     return data
-
-# Define a function to save JSON data to a file
-def save_json(data, file_path):
-    with open(file_path, "w") as f:
-        json.dump(data, f, indent=4)
-
-# Function to process questions and answers using RAG
-
 
 def load_json(file_path: str) -> List[dict]:
     """Load data from a JSON file."""
