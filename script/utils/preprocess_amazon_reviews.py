@@ -4,6 +4,8 @@ import gzip
 import random
 import os
 from transformers import pipeline
+from nltk.tokenize import sent_tokenize
+import nltk
 from pyabsa import AspectTermExtraction as ATEPC, DeviceTypeOption
 import pprint
 
@@ -15,6 +17,10 @@ REVIEWS_PATH =  '/home/stud/abedinz1/localDisk/RAG/RAG/data/Cell_Phones_and_Acce
 
 OUTPUT_REVIEWS_PATH = '/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_reviews.json'
 UNIQUE_PRODUCT_IDS_PATH = "../../data/unique_product_ids.pickle"
+
+# Ensure NLTK punkt is downloaded
+nltk.download('punkt')
+
 
 def setup_aspect_extractor(language='english'):
     """Initialize the Aspect Term Extraction model with the specified language."""
@@ -58,36 +64,67 @@ def save_pickle(data, file_path):
     with open(file_path, 'wb') as file:
         pickle.dump(data, file)
 
+def perform_absa_and_save(data, output_path):
+    """Perform ABSA on each sentence of each review and save the results."""
+    filtered_reviews = []
+    for entry in data[:3]:
+        print("#REVIE@")
+        pprint.pprint(entry)
+        review_text = entry['reviewText']  # Adjust the key based on your JSON structure
+        sentences = sent_tokenize(review_text)
+        for sentence in sentences:
+            absa_result = aspect_extractor.predict(sentence, print_result=False)
+            print("@SENTENCE@")
+            pprint.pprint(absa_result)
+            filtered_reviews.append({
+                'reviewText': sentence,
+                'aspect': absa_result.get('aspect'),
+                'sentiment': absa_result.get('sentiment'),
+                'asin': entry['asin'],
+                'reviewerID': entry['reviewerID'],
+                })
+    
+    save_json(filtered_reviews,output_path)
+
+
 def main():
     unique_ids = load_unique_ids(UNIQUE_IDS_PATH)
     
     #reviews = load_json(REVIEWS_PATH)
     reviews = parse_gzip_json(REVIEWS_PATH)
 
-    filtered_reviews = []
-    unique_product_ids = set()
-    print(filtered_reviews)
-
-    for review in reviews:
-        key = generate_key(review['asin'], review['reviewerID'])
-        if key in unique_ids:
-            review_text = review.get('reviewText', " ")
-
-            result = aspect_extractor.predict(
-                [review_text],
-                save_result=False,
-                print_result=True,
-                ignore_error=True
-            )
-
-            review['aspect'] = result[0]['aspect']
-            review['sentiment'] = result[0]['sentiment']
-            filtered_reviews.append(review)
-            unique_product_ids.add(review["asin"])
-
-    save_json(filtered_reviews, OUTPUT_REVIEWS_PATH)
-    save_pickle(unique_product_ids, UNIQUE_PRODUCT_IDS_PATH)
-    pprint.pprint(filtered_reviews)
+    perform_absa_and_save(reviews,OUTPUT_REVIEWS_PATH)
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+  # filtered_reviews = []
+    # unique_product_ids = set()
+
+    # for review in reviews:
+    #     key = generate_key(review['asin'], review['reviewerID'])
+    #     if key in unique_ids:
+    #         review_text = review.get('reviewText', " ")
+
+    #         result = aspect_extractor.predict(
+    #             [review_text],
+    #             save_result=False,
+    #             print_result=True,
+    #             ignore_error=True
+    #         )
+
+    #         review['aspect'] = result[0]['aspect']
+    #         review['sentiment'] = result[0]['sentiment']
+    #         filtered_reviews.append(review)
+    #         unique_product_ids.add(review["asin"])
+
+    # save_json(filtered_reviews, OUTPUT_REVIEWS_PATH)
+    # save_pickle(unique_product_ids, UNIQUE_PRODUCT_IDS_PATH)
