@@ -1,4 +1,5 @@
 import json
+import csv
 import logging
 import sys
 import os
@@ -57,6 +58,19 @@ def search_neg_qa_pairs(data, rag_key, question_key):
         print("Not present")
         return {"answer": "Not present"}
 
+def convert_to_csv(response):
+    # Convert the response dictionary to a list of rows for CSV
+    rows = []
+    headers = response.keys()
+    rows.append(response.values())
+    return headers, rows
+
+def save_csv(filename, data):
+    headers, rows = data
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+        writer.writerows(rows)
 
 
 # Function to process questions and answers using RAG
@@ -74,32 +88,24 @@ def process_questions_and_answers(input_file_path, output_file_path, apply_filte
         label = item["label"]
 
 
-        answer, relevant_docs, final_prompt, rag_key = answer_with_rag(
+        answer, relevant_docs, final_prompt, rag_key, metadata = answer_with_rag(
             question, get_reader_model(), vector_database, product_id, question_key, answer_key, apply_filter, conversation_mapping[label]
         )
 
-        if rag_key == answer_key:
-            print("rag key is same as anaswer key")
-            search_answer = "Not needed"
-        else:    
-            print("The rag answer is different, now we will search")
-            search_pair = search_neg_qa_pairs(data, rag_key, question_key)
-            search_answer = search_pair["answer"]
+        # Your existing code to get the response from RAG
+        response = {
+            "LLM ANSWER": answer,
+            "RELEVANT DOC": relevant_docs,
+            "FINAL PROMPT": final_prompt,
+            "RELEVANT DOC METADATA": metadata,
+        }
 
-        # Update item with RAG results and search results
-            item.update({
-                "answer_from_rag": answer,
-                "final_prompt": final_prompt,
-                "search_answer": search_answer
-            })
-        logging.info(f"Relevant Document for the question: {question} are {relevant_docs}")
-        save_json_append([item], output_file_path)  # Append mode
+        # Convert the response to CSV format
+        response_csv = convert_to_csv(response)
 
-        counter += 1
-        if counter > 3:
-            break
+        # Save the CSV to a file
+        save_csv(output_file_path, response_csv)
 
-    logging.info(f"Processed data saved to {output_file_path}")
 
 
 def answer_with_rag(
@@ -125,21 +131,24 @@ def answer_with_rag(
 
     # Retrieve documents based on the filter criteria
     try:
-        if apply_filter:
-            relevant_docs = knowledge_index.similarity_search(
+        relevant_docs = knowledge_index.similarity_search(
                 query=question,
                 filter=dict(
                     productId=product_id,
-                    sentiment=sentiment
                 ),
-                k=num_retrieved_docs,
-                fetch_k=1000
-            )
-        else:
-            relevant_docs = knowledge_index.similarity_search(
-                query=question,
                 k=num_retrieved_docs
             )
+        
+        if apply_filter:
+            # Step 2: Filter these documents to find matches for the specified aspect and sentiment
+            filtered_docs = []
+            for doc in relevant_docs:
+                # Assuming each doc has 'metadata' which contains 'aspects' as a list of dicts
+                for aspect_sentiment in doc.metadata['aspects']:
+                    if aspect_sentiment['aspect'] == "aspect" and aspect_sentiment['sentiment'] == "sentiment":
+                        filtered_docs.append(doc)
+                        break
+                
 
         logging.info(f"relevant_docs: %s",relevant_docs)
 
@@ -164,7 +173,7 @@ def answer_with_rag(
         logging.info(f"Error during document retrieval or answer generation: {e}")
         answer, relevant_docs, final_prompt, rag_key = None, [], "", ""
 
-    return answer, relevant_docs, final_prompt, rag_key
+    return answer, relevant_docs, final_prompt, rag_key, metadata
 
 
 
@@ -174,7 +183,7 @@ def main_run():
     Expects at least one command line argument for filtering options.
 
     Usage:
-        python script_name.py <filter_option>
+        python rag_experiment.py filter true
     """
     logging.basicConfig(level=logging.INFO)
 
@@ -187,7 +196,7 @@ def main_run():
     logging.info("Filter: %s", apply_filter)
 
     base_dir = "/home/stud/abedinz1/localDisk/RAG/RAG"
-    output_file_name = "rag_response_{}.txt".format(apply_filter)
+    output_file_name = "rag_response_{}.csv".format(apply_filter)
     output_file_path = os.path.join(base_dir, "results", output_file_name)
     logging.info("Output file path: %s", output_file_path)
 
@@ -203,3 +212,27 @@ def main_run():
 
 if __name__ == "__main__":
     main_run()
+
+
+
+
+# if rag_key == answer_key:
+        #     print("rag key is same as anaswer key")
+        #     search_answer = "Not needed"
+        # else:    
+        #     print("The rag answer is different, now we will search")
+        #     search_pair = search_neg_qa_pairs(data, rag_key, question_key)
+        #     search_answer = search_pair["answer"]
+
+        # # Update item with RAG results and search results
+        #     item.update({
+        #         "answer_from_rag": answer,
+        #         "final_prompt": final_prompt,
+        #         "search_answer": search_answer
+        #     })
+        # logging.info(f"Relevant Document for the question: {question} are {relevant_docs}")
+        # save_json_append([item], output_file_path)  # Append mode
+
+        # counter += 1
+        # if counter > 3:
+        #     break

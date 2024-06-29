@@ -129,15 +129,24 @@ def create_dataset(data: List[dict]) -> Dataset:
     return ds
 
 def preprocess_documents(ds: Dataset):
-    """Preprocess documents for Langchain.
-		So we iterate over every element of the dataset
-		and make it langchain documents
-    """
+    """Preprocess documents for Langchain."""
     raw_knowledge_base = [
-        LangchainDocument(page_content=doc["reviewText"], metadata={"productId": doc["asin"], "reviewerID": doc["reviewerID"], "sentiment" : doc["sentiment"]})
+        LangchainDocument(
+            page_content=doc["reviewText"], 
+            metadata={
+                "productId": doc["asin"], 
+                "reviewerID": doc["reviewerID"],
+                "aspects": [
+                    {"aspect": aspect, "sentiment": sentiment}
+                    for aspect, sentiment in zip(doc["aspect"], doc["sentiment"])
+                ]
+            }
+        )
         for doc in ds
     ]
     return raw_knowledge_base
+
+
 
 
 def chunk_documents(raw_docs):
@@ -180,8 +189,6 @@ def main():
 
     # File path to your JSON file
     file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_reviews.json"
-    #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/Cell_Phones_and_Accessories_5.json.gz"
-
 
     # Load data from JSON file
     data = load_json(file_path)

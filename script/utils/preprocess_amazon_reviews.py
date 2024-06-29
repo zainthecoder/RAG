@@ -67,15 +67,15 @@ def save_pickle(data, file_path):
 def perform_absa_and_save(data, output_path):
     """Perform ABSA on each sentence of each review and save the results."""
     filtered_reviews = []
-    for entry in data[:3]:
-        print("#REVIE@")
-        pprint.pprint(entry)
+    for entry in data:
+        #print("#REVIE@")
+        #pprint.pprint(entry)
         review_text = entry['reviewText']  # Adjust the key based on your JSON structure
         sentences = sent_tokenize(review_text)
         for sentence in sentences:
             absa_result = aspect_extractor.predict(sentence, print_result=False)
-            print("@SENTENCE@")
-            pprint.pprint(absa_result)
+            #print("@SENTENCE@")
+            #pprint.pprint(absa_result)
             filtered_reviews.append({
                 'reviewText': sentence,
                 'aspect': absa_result.get('aspect'),
