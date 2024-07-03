@@ -64,26 +64,28 @@ def save_pickle(data, file_path):
     with open(file_path, 'wb') as file:
         pickle.dump(data, file)
 
-def perform_absa_and_save(data, output_path):
+def perform_absa_and_save(data, output_path,unique_ids):
     """Perform ABSA on each sentence of each review and save the results."""
     filtered_reviews = []
     for entry in data:
-        #print("#REVIE@")
-        #pprint.pprint(entry)
-        review_text = entry['reviewText']  # Adjust the key based on your JSON structure
-        sentences = sent_tokenize(review_text)
-        for sentence in sentences:
-            absa_result = aspect_extractor.predict(sentence, print_result=False)
-            #print("@SENTENCE@")
-            #pprint.pprint(absa_result)
-            filtered_reviews.append({
-                'reviewText': sentence,
-                'aspect': absa_result.get('aspect'),
-                'sentiment': absa_result.get('sentiment'),
-                'asin': entry['asin'],
-                'reviewerID': entry['reviewerID'],
-                })
-    
+        print("#REVIE@")
+        pprint.pprint(entry)
+        key = generate_key(entry['asin'], entry['reviewerID'])
+        if key in unique_ids:
+            review_text = entry['reviewText']  # Adjust the key based on your JSON structure
+            sentences = sent_tokenize(review_text)
+            for sentence in sentences:
+                absa_result = aspect_extractor.predict(sentence, print_result=False)
+                #print("@SENTENCE@")
+                #pprint.pprint(absa_result)
+                filtered_reviews.append({
+                    'reviewText': sentence,
+                    'aspect': absa_result.get('aspect'),
+                    'sentiment': absa_result.get('sentiment'),
+                    'asin': entry['asin'],
+                    'reviewerID': entry['reviewerID'],
+                    })
+        
     save_json(filtered_reviews,output_path)
 
 
@@ -93,7 +95,7 @@ def main():
     #reviews = load_json(REVIEWS_PATH)
     reviews = parse_gzip_json(REVIEWS_PATH)
 
-    perform_absa_and_save(reviews,OUTPUT_REVIEWS_PATH)
+    perform_absa_and_save(reviews,OUTPUT_REVIEWS_PATH,unique_ids)
 
 if __name__ == "__main__":
     main()

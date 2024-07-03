@@ -67,7 +67,8 @@ def convert_to_csv(response):
 
 def save_csv(filename, data):
     headers, rows = data
-    with open(filename, mode='w', newline='') as file:
+    print("filename: ",filename)
+    with open(filename, mode='a', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(headers)
         writer.writerows(rows)
@@ -79,32 +80,49 @@ def process_questions_and_answers(input_file_path, output_file_path, apply_filte
     data = load_json(input_file_path)
     print(input_file_path)
     # Iterate over each question and answer pair
-    counter = 0
-    for item in data:
-        question = item["question"]
-        product_id = item["key_question"].split('_')[0]
-        question_key = item["key_question"]
-        answer_key = item["key_answer"]
-        label = item["label"]
+    with open(output_file_path, "w", newline="", encoding="utf-8") as output_file_path:
+        fieldnames = [
+            "LLM ANSWER",
+            "RELEVANT DOC",
+            "FINAL PROMPT",
+            "RELEVANT DOC METADATA"
+        ]
+        writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
+        writer.writeheader()
+
+        counter = 0
+        for item in data:
+            question = item["question"]
+            product_id = item["key_question"].split('_')[0]
+            question_key = item["key_question"]
+            answer_key = item["key_answer"]
+            label = item["label"]
+            aspect = item["aspect"]
 
 
-        answer, relevant_docs, final_prompt, rag_key, metadata = answer_with_rag(
-            question, get_reader_model(), vector_database, product_id, question_key, answer_key, apply_filter, conversation_mapping[label]
-        )
+            answer, relevant_docs, final_prompt, rag_key, metadata = answer_with_rag(
+                question, get_reader_model(), vector_database, product_id, question_key, answer_key, apply_filter, conversation_mapping[label],aspect
+            )
 
-        # Your existing code to get the response from RAG
-        response = {
-            "LLM ANSWER": answer,
-            "RELEVANT DOC": relevant_docs,
-            "FINAL PROMPT": final_prompt,
-            "RELEVANT DOC METADATA": metadata,
-        }
+            # Your existing code to get the response from RAG
+            writer.writerow(
+                {
+                "LLM ANSWER": answer,
+                "RELEVANT DOC": relevant_docs,
+                "FINAL PROMPT": final_prompt,
+                "RELEVANT DOC METADATA": metadata,
+                }
+            )
 
-        # Convert the response to CSV format
-        response_csv = convert_to_csv(response)
+            # # Convert the response to CSV format
+            # response_csv = convert_to_csv(response)
 
-        # Save the CSV to a file
-        save_csv(output_file_path, response_csv)
+            # # Save the CSV to a file
+            # save_csv(output_file_path, response_csv)
+
+            # counter=counter+1
+            # if counter>2:
+            #     break
 
 
 
@@ -117,6 +135,7 @@ def answer_with_rag(
     answer_key,
     apply_filter=False,
     sentiment="positive",
+    aspect = "None",
     num_retrieved_docs: int = 1,
     num_docs_final: int = 1,
 ):
@@ -145,13 +164,13 @@ def answer_with_rag(
             for doc in relevant_docs:
                 # Assuming each doc has 'metadata' which contains 'aspects' as a list of dicts
                 for aspect_sentiment in doc.metadata['aspects']:
-                    if aspect_sentiment['aspect'] == "aspect" and aspect_sentiment['sentiment'] == "sentiment":
+                    if aspect_sentiment['aspect'] == aspect and aspect_sentiment['sentiment'] == sentiment:
                         filtered_docs.append(doc)
                         break
                 
 
         logging.info(f"relevant_docs: %s",relevant_docs)
-
+        metadata = {}
         if relevant_docs:
             # Select the most relevant document
             relevant_doc = relevant_docs[0]

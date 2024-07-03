@@ -1,7 +1,7 @@
 import json
 
 # Function to load JSON data from a file and find the first 200 unique productIds
-def find_first_200_unique_product_ids(path):
+def find_first_20_unique_product_ids(path):
     unique_product_ids = set()
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
@@ -9,7 +9,7 @@ def find_first_200_unique_product_ids(path):
             product_id = obj.get("productId")
             if product_id:
                 unique_product_ids.add(product_id)
-                if len(unique_product_ids) >= 200:
+                if len(unique_product_ids) >= 20:
                     break
     return list(unique_product_ids)
 

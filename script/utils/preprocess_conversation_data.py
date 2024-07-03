@@ -25,10 +25,11 @@ def extract_question_answer_pairs(data):
                         if 'Qpos1A' in pair_key:
                             question = pair_data['Question']
                             key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            aspect = pair_data['Labels']['Aspect']
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
                             key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
-
+                            aspect = pair_data['Labels']['Aspect']
                     unique_id=generate(size=10) 
                     qa_pairs.append({
                             "unique_id":unique_id,
@@ -36,7 +37,8 @@ def extract_question_answer_pairs(data):
                             "key_answer":key_answer,
                             "question":question,
                             "answer":answer,
-                            "label": "Qpos1A_Apos1A"
+                            "label": "Qpos1A_Apos1A",
+                            "aspect": aspect
                         })
                     unique_conv_types.add(conv_type)
                 else:
@@ -47,10 +49,12 @@ def extract_question_answer_pairs(data):
                         if counter == 1:
                             question = pair_data['Opinion']
                             key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            aspect = pair_data['Labels']['Aspect']
                             counter += 1
                         elif counter == 2:
                             answer = pair_data['Opinion']
                             key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            aspect = pair_data['Labels']['Aspect']
                     unique_id=generate(size=10)
                     qa_pairs.append({
                             "unique_id":unique_id,
@@ -58,13 +62,14 @@ def extract_question_answer_pairs(data):
                             "key_answer":key_answer,
                             "question":question,
                             "answer":answer,
-                            "label": conv_type
+                            "label": conv_type,
+                            "aspect": aspect
                         })
                     unique_conv_types.add(conv_type)
 
                 unique_ids.add(key_question)
                 unique_ids.add(key_answer)
-                if len(unique_ids) >= 2000:
+                if len(unique_ids) >= 100:
                     return qa_pairs, unique_ids, unique_conv_types
 
 
