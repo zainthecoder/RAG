@@ -58,21 +58,6 @@ def search_neg_qa_pairs(data, rag_key, question_key):
         print("Not present")
         return {"answer": "Not present"}
 
-def convert_to_csv(response):
-    # Convert the response dictionary to a list of rows for CSV
-    rows = []
-    headers = response.keys()
-    rows.append(response.values())
-    return headers, rows
-
-def save_csv(filename, data):
-    headers, rows = data
-    print("filename: ",filename)
-    with open(filename, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(headers)
-        writer.writerows(rows)
-
 
 # Function to process questions and answers using RAG
 def process_questions_and_answers(input_file_path, output_file_path, apply_filter):
@@ -113,13 +98,6 @@ def process_questions_and_answers(input_file_path, output_file_path, apply_filte
                 "RELEVANT DOC METADATA": metadata,
                 }
             )
-
-            # # Convert the response to CSV format
-            # response_csv = convert_to_csv(response)
-
-            # # Save the CSV to a file
-            # save_csv(output_file_path, response_csv)
-
             # counter=counter+1
             # if counter>2:
             #     break
