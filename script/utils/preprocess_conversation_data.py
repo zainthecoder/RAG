@@ -7,7 +7,7 @@ import pickle
 def extract_question_answer_pairs(data):
     
     qa_pairs = []
-    unique_ids = set()
+    #unique_ids = set()
     unique_conv_types = set()
 
 
@@ -24,21 +24,27 @@ def extract_question_answer_pairs(data):
                         #pprint.pprint(pair_data)
                         if 'Qpos1A' in pair_key:
                             question = pair_data['Question']
-                            key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
+                            polarity = pair_data['Labels']['Polarity']
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
-                            key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            #key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
+                            polarity = pair_data['Labels']['Polarity']
                     unique_id=generate(size=10) 
                     qa_pairs.append({
                             "unique_id":unique_id,
-                            "key_question":key_question,
-                            "key_answer":key_answer,
+                            #"key_question":key_question,
+                            #"key_answer":key_answer,
+                            "product_id":product_id,
                             "question":question,
                             "answer":answer,
                             "label": "Qpos1A_Apos1A",
-                            "aspect": aspect
+                            "aspect": aspect,
+                            "polarity": polarity
                         })
                     unique_conv_types.add(conv_type)
                 else:
@@ -48,32 +54,38 @@ def extract_question_answer_pairs(data):
                         #pprint.pprint(pair_data)
                         if counter == 1:
                             question = pair_data['Opinion']
-                            key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
+                            polarity = pair_data['Labels']['Polarity']
                             counter += 1
                         elif counter == 2:
                             answer = pair_data['Opinion']
-                            key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            #key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
+                            product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
+                            polarity = pair_data['Labels']['Polarity']
                     unique_id=generate(size=10)
                     qa_pairs.append({
                             "unique_id":unique_id,
-                            "key_question":key_question,
-                            "key_answer":key_answer,
+                            #"key_question":key_question,
+                            #"key_answer":key_answer,
+                            "product_id":product_id,
                             "question":question,
                             "answer":answer,
                             "label": conv_type,
-                            "aspect": aspect
+                            "aspect": aspect,
+                            "polarity": polarity
                         })
                     unique_conv_types.add(conv_type)
 
-                unique_ids.add(key_question)
-                unique_ids.add(key_answer)
-                if len(unique_ids) >= 100:
-                    return qa_pairs, unique_ids, unique_conv_types
+                #unique_ids.add(key_question)
+                #unique_ids.add(key_answer)
+                # if len(unique_ids) >= 100:
+                #     return qa_pairs, unique_ids, unique_conv_types
 
 
-    return qa_pairs, unique_ids, unique_conv_types
+    return qa_pairs, unique_conv_types
 
 def load_json(file_path):
     """Load data from a JSON file."""
@@ -87,36 +99,37 @@ def load_json(file_path):
 
 # File path to your JSON file
 #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/100_blocks_neg.json"
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/100_blocks_neg.pkl"
 
 #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/dataset.json"
 
 
 # Load data from JSON file
-data = load_json(file_path)
-print("zainnnn")
-#pprint.pprint(data)
-    # Create a Hugging Face dataset
-qa_pairs, unique_ids, unique_conv_types = extract_question_answer_pairs(data)
+#data = load_json(file_path)
+
+with open(file_path, 'rb') as f:
+    data = pickle.load(f)
+
+qa_pairs, unique_conv_types = extract_question_answer_pairs(data)
 
 # File path to save the Python list
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/filtered_qa_pairs.json"
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl"
 
 # Save qa_pairs as a Python list to a JSON file
-with open(file_path, "w") as f:
-    json.dump(qa_pairs, f)
+with open(file_path, "wb") as f:
+    pickle.dump(qa_pairs, f)
 
 
-# File path to save the Python list
-file_path = "../../data/unique_ids.pickle"
+# # File path to save the Python list
+# file_path = "../../data/unique_ids.pickle"
 
 
-# Open the file in binary mode
-with open(file_path, 'wb') as file:
-    # Serialize and write the variable to the file
-    pickle.dump(unique_ids, file)
+# # Open the file in binary mode
+# with open(file_path, 'wb') as file:
+#     # Serialize and write the variable to the file
+#     pickle.dump(unique_ids, file, protocol=4)
     
-print("unique conv type: ", unique_conv_types)
+# print("unique conv type: ", unique_conv_types)
 
  # "B00836Y6B2": {
  #        "Opos1B_Opos1B2_only_agreement": {

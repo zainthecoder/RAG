@@ -5,14 +5,11 @@ from langchain_community.vectorstores.utils import DistanceStrategy
 from datasets import Dataset
 import os
 import csv
+import pickle
+import pandas as pd
 
 from config import get_embedding_model, get_reader_model, conversation_mapping
 
-
-# vector store for vanilla rag
-vainlla_vector_database = FAISS.load_local(
-    "faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-)
 
 prompt_in_chat_format = """
 Answer the question only based on the following context:
@@ -30,10 +27,7 @@ Answer the question based on the above detailed_information/context and persona:
 Question: {question}
 """
 
-def load_json(file_path):
-    with open(file_path, "r") as f:
-        data = json.load(f)
-    return data
+llm = get_reader_model()
 
 def get_llm_response(question, label="", aspect="", product_id=""):
 
@@ -49,17 +43,26 @@ def get_llm_response(question, label="", aspect="", product_id=""):
     )
 
     # Generate the answer using the large language model
-    answer = get_reader_model(final_prompt)[0]["generated_text"]
+    answer = llm(final_prompt)[0]["generated_text"]
     return answer
 
 
-def create_vector_database(reviews_input_file_path):
+def create_vector_database():
     # Load data using hugginface dataset
+    # Load pickled data instead of JSON files
+    with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", 'rb') as f:
+        blocks_neg_100 = pickle.load(f)    
+
+    # Check the structure of blocks_neg_100
+    print(type(blocks_neg_100))
+    print(blocks_neg_100)
+    ds = Dataset.from_list(blocks_neg_100)
+
 
     # """Preprocess documents for Langchain."""
     raw_knowledge_base = [
         LangchainDocument(
-            page_content=doc["reviewText"],
+            page_content=doc["sentence"],
             metadata={
                 "productId": doc["asin"],
                 "aspect": doc["aspect"],
@@ -82,7 +85,7 @@ def get_vanilla_rag_response(question):
 
     # create vector database
     if not os.path.exists("index path"):
-        create_vector_database("")
+        create_vector_database()
 
     vector_database = FAISS.load_local(
         "faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
@@ -104,7 +107,7 @@ def get_our_rag_response(question, label, aspect, product_id):
 
     # create vector database
     if not os.path.exists("index path"):
-        create_vector_database("")
+        create_vector_database()
 
     vector_database = FAISS.load_local(
         "faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
@@ -142,8 +145,9 @@ def get_our_rag_response(question, label, aspect, product_id):
     answer = get_reader_model(final_prompt)[0]["generated_text"]
     return answer
 
-
-data = load_json(question_answer_pairs)
+# Load pickled data instead of JSON files
+with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", 'rb') as f:
+    blocks_neg_100 = pickle.load(f)
 
 with open("output_file_path", "w", newline="", encoding="utf-8") as output_file_path:
     fieldnames = [
@@ -157,13 +161,11 @@ with open("output_file_path", "w", newline="", encoding="utf-8") as output_file_
     writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
     writer.writeheader()
 
-    for item in data:
+    for item in blocks_neg_100:
 
         # extract information from object
         question = item["question"]
-        product_id = item["key_question"].split("_")[0]  # BUG
-        question_key = item["key_question"]
-        answer_key = item["key_answer"]
+        product_id = item["product_id"]
         label = item["label"]
         aspect = item["aspect"]
         answer = item["answer"]
