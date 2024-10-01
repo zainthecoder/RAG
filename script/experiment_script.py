@@ -7,6 +7,7 @@ import os
 import csv
 import pickle
 import pandas as pd
+import pprint
 
 from config import get_embedding_model, get_reader_model, conversation_mapping
 
@@ -27,8 +28,7 @@ Answer the question based on the above detailed_information/context and persona:
 Question: {question}
 """
 
-llm = get_reader_model()
-
+#Comment this line when you dont have the vector database
 vector_database = FAISS.load_local(
         "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
     )
@@ -54,7 +54,7 @@ def transform_data(data):
             break
     return transformed_data
 
-def get_llm_response(question, label="", aspect="", product_id=""):
+def get_llm_response(question, llm, label="", aspect="", product_id=""):
 
     if label == "Qpos1A_Apos1A":
         detailed_information = f"The answer should have positive polarity about aspect: {aspect} and about same product with product id: {product_id}"
@@ -75,7 +75,7 @@ def get_llm_response(question, label="", aspect="", product_id=""):
 def create_vector_database():
     # Load data using hugginface dataset
 
-    print("Createing Vector Database")
+    print("Creating Vector Database")
 
     with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/final_reviews_after_absa.json", 'r') as file:
         data = json.load(file)
@@ -108,19 +108,15 @@ def create_vector_database():
     db.save_local("faiss_index")
 
 
-def get_vanilla_rag_response(question):
+def get_vanilla_rag_response(question, llm):
 
     # create vector database
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
-    # vector_database = FAISS.load_local(
-    #     "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-    # )
-
     relevant_doc = vector_database.similarity_search(query=question, k=1)
-    print("Relevant Doc in vanilla:")
-    print(relevant_doc)
+    pprint.pprint("Relevant Doc in vanilla:")
+    pprint.pprint(relevant_doc)
     relevant_doc = relevant_doc[0]
     relevant_page_content = relevant_doc.page_content
     final_prompt = prompt_in_chat_format.format(
@@ -128,50 +124,63 @@ def get_vanilla_rag_response(question):
     )
 
     # Generate the answer using the large language model
-    answer = get_reader_model(final_prompt)[0]["generated_text"]
+    answer = llm(final_prompt)[0]["generated_text"]
     return answer
 
 
-def get_our_rag_response(question, label, aspect, product_id):
+def get_our_rag_response(question, label, aspect, product_id, llm):
 
     # create vector database
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
-    # vector_database = FAISS.load_local(
-    #     "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-    # )
-
     if label == "Qpos1A_Apos1A":
-        filter_dict = {
-            "productId": product_id,
-            "aspect": aspect,
-            "polarity": "positive",
-        }
+        filter_dict = dict(
+            productId= product_id,
+            aspect= aspect,
+            polarity= "Positive"
+        )
     elif label == "Oneg1A_Opos1A":
-        filter_dict = {
-            "productId": product_id,
-            "aspect": aspect,
-            "polarity": "positive",
-        }
+        filter_dict = dict(
+            productId= product_id,
+            aspect= aspect,
+            polarity= "Positive"
+        )
     elif label == "Oneg1A_Opos1B":
-        filter_dict = {
-            "productId": {"$ne": product_id},
-            "aspect": aspect,
-            "polarity": "positive",
-        }
+        filter_dict = dict(
+            productId= {"$ne": product_id},
+            aspect= aspect,
+            polarity= "Positive",
+        ) 
 
+    print("Filter Dict")
+    pprint.pprint(filter_dict)
+    print("Question: ",question)
     relevant_doc = vector_database.similarity_search(
         query=question, filter=filter_dict, k=1
     )
-    relevant_doc = relevant_doc[0]
-    relevant_page_content = relevant_doc.page_content
-    final_prompt = prompt_in_chat_format.format(
-        question=question, detailed_information=relevant_doc
-    )
+    # {'productId': 'B08J4JYD47', 'aspect': 'screen', 'polarity': 'Positive'}
+    # relevant_doc = vector_database.similarity_search(
+    #     query="Nice phone with decent sized screen", 
+    #     filter=dict(
+    #         productId='B08J4JYD47', 
+    #         aspect= 'screen', 
+    #         polarity= 'Positive'
+    #         ), 
+    #     k=1
+    # )
+    print("Relevant Doc in OURS:")
+    pprint.pprint(relevant_doc)
+    answer = ""
+    if relevant_doc:
+        relevant_doc = relevant_doc[0]
+        relevant_page_content = relevant_doc.page_content
+        final_prompt = prompt_in_chat_format.format(
+            question=question, detailed_information=relevant_doc
+        )
 
-    # Generate the answer using the large language model
-    answer = get_reader_model(final_prompt)[0]["generated_text"]
+        # Generate the answer using the large language model
+        answer = llm(final_prompt)[0]["generated_text"]
     return answer
 
 if __name__ == '__main__':
@@ -180,7 +189,7 @@ if __name__ == '__main__':
         blocks_neg_100 = pickle.load(f)
 
     # Writing to CSV file
-    with open("output_file_path", "w", newline="", encoding="utf-8") as output_file_path:
+    with open("output_file_path.csv", "w", newline="", encoding="utf-8") as output_file_path:
         fieldnames = [
             "query",
             "opinion_conv_response",
@@ -205,15 +214,15 @@ if __name__ == '__main__':
 
             # Save llm response
             print("save llm response")
-            llm_response = get_llm_response(question, label, aspect, product_id)
+            llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
 
             # Save vanilla rag response
             print("save vanilla rag response")
-            vanilla_rag_response = get_vanilla_rag_response(question)
+            vanilla_rag_response = get_vanilla_rag_response(question, get_reader_model())
 
             # Save our rag response
             print("save our rag response")
-            our_rag_response = get_our_rag_response(question, label, aspect, product_id)
+            our_rag_response = get_our_rag_response(question, label, aspect, product_id, get_reader_model())
 
             # Write in csv
             writer.writerow({
