@@ -29,7 +29,7 @@ model_singleton = {}
 
 def get_embedding_model():
     if 'embedding_model' not in model_singleton:
-        EMBEDDING_MODEL_NAME = "thenlper/gte-small"
+        EMBEDDING_MODEL_NAME = "thenlper/gte-large"
         model_singleton['embedding_model'] = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL_NAME,
             multi_process=True,

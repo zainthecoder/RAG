@@ -128,14 +128,25 @@ def answer_with_rag(
 
     # Retrieve documents based on the filter criteria
     try:
+
+        print("Filter Option:", apply_filter)
+
         relevant_docs = knowledge_index.similarity_search(
                 query=question,
                 filter=dict(
                     productId=product_id,
+                    aspect=  $in aspectQuery
                 ),
                 k=num_retrieved_docs
             )
         
+        #print("Retrieved doc before aspect and sentiment filtering: ")
+        #import pprint; pprint.pprint(relevant_docs)
+        #print("\n")
+
+        print("Query aspect: ",aspect)
+        print("Query sentiment: ",sentiment)
+
         if apply_filter:
             # Step 2: Filter these documents to find matches for the specified aspect and sentiment
             filtered_docs = []
@@ -146,6 +157,10 @@ def answer_with_rag(
                         filtered_docs.append(doc)
                         break
                 
+        relevant_docs = filtered_docs
+        print("Retrieved docs after all filtering: ")
+        pprint.pprint(relevant_docs)
+
 
         logging.info(f"relevant_docs: %s",relevant_docs)
         metadata = {}
