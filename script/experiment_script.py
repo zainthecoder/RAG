@@ -29,6 +29,31 @@ Question: {question}
 
 llm = get_reader_model()
 
+vector_database = FAISS.load_local(
+        "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
+    )
+def transform_data(data):
+    transformed_data = []
+    counter = 0
+    for entry in data:
+        aspects = entry.get("aspect", [])
+        sentiments = entry.get("sentiment", [])
+        
+        # If there are multiple aspects and sentiments, create a new object for each pair
+        if len(aspects) > 1 or len(sentiments) > 1:
+            # Handle cases where the length of aspects and sentiments are unequal
+            for i in range(max(len(aspects), len(sentiments))):
+                new_entry = entry.copy()
+                new_entry["aspect"] = [aspects[i]] if i < len(aspects) else []
+                new_entry["sentiment"] = [sentiments[i]] if i < len(sentiments) else []
+                transformed_data.append(new_entry)
+        else:
+            transformed_data.append(entry)
+        counter = counter+1
+        if counter>10:
+            break
+    return transformed_data
+
 def get_llm_response(question, label="", aspect="", product_id=""):
 
     if label == "Qpos1A_Apos1A":
@@ -49,24 +74,26 @@ def get_llm_response(question, label="", aspect="", product_id=""):
 
 def create_vector_database():
     # Load data using hugginface dataset
-    # Load pickled data instead of JSON files
-    with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", 'rb') as f:
-        blocks_neg_100 = pickle.load(f)    
 
-    # Check the structure of blocks_neg_100
-    print(type(blocks_neg_100))
-    print(blocks_neg_100)
-    ds = Dataset.from_list(blocks_neg_100)
+    print("Createing Vector Database")
+
+    with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/final_reviews_after_absa.json", 'r') as file:
+        data = json.load(file)
+    
+    # Transform the data
+    transformed_data = transform_data(data)
+
+    ds = Dataset.from_list(transformed_data)
 
 
     # """Preprocess documents for Langchain."""
     raw_knowledge_base = [
         LangchainDocument(
-            page_content=doc["sentence"],
+            page_content=doc["text"],
             metadata={
                 "productId": doc["asin"],
-                "aspect": doc["aspect"],
-                "polarity": doc["polarty"],
+                "aspect": doc["aspect"][0] if doc["sentiment"] else "",
+                "polarity": doc["sentiment"][0] if doc["sentiment"] else "",
             },
         )
         for doc in ds
@@ -84,15 +111,17 @@ def create_vector_database():
 def get_vanilla_rag_response(question):
 
     # create vector database
-    if not os.path.exists("index path"):
+    if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
-    vector_database = FAISS.load_local(
-        "faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-    )
+    # vector_database = FAISS.load_local(
+    #     "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
+    # )
 
     relevant_doc = vector_database.similarity_search(query=question, k=1)
-    relevant_doc = relevant_docs[0]
+    print("Relevant Doc in vanilla:")
+    print(relevant_doc)
+    relevant_doc = relevant_doc[0]
     relevant_page_content = relevant_doc.page_content
     final_prompt = prompt_in_chat_format.format(
         question=question, detailed_information=relevant_doc
@@ -106,12 +135,12 @@ def get_vanilla_rag_response(question):
 def get_our_rag_response(question, label, aspect, product_id):
 
     # create vector database
-    if not os.path.exists("index path"):
+    if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
-    vector_database = FAISS.load_local(
-        "faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-    )
+    # vector_database = FAISS.load_local(
+    #     "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
+    # )
 
     if label == "Qpos1A_Apos1A":
         filter_dict = {
@@ -145,50 +174,52 @@ def get_our_rag_response(question, label, aspect, product_id):
     answer = get_reader_model(final_prompt)[0]["generated_text"]
     return answer
 
-# Load pickled data instead of JSON files
-with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", 'rb') as f:
-    blocks_neg_100 = pickle.load(f)
+if __name__ == '__main__':
+    # Load pickled data
+    with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", 'rb') as f:
+        blocks_neg_100 = pickle.load(f)
 
-with open("output_file_path", "w", newline="", encoding="utf-8") as output_file_path:
-    fieldnames = [
-        "query",
-        "opinion_conv_response",
-        "llm_response",
-        "vanilla_rag_response",
-        "our_rag_response",
-    ]
+    # Writing to CSV file
+    with open("output_file_path", "w", newline="", encoding="utf-8") as output_file_path:
+        fieldnames = [
+            "query",
+            "opinion_conv_response",
+            "llm_response",
+            "vanilla_rag_response",
+            "our_rag_response",
+        ]
+        writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
+        writer.writeheader()
 
-    writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
-    writer.writeheader()
+        for item in blocks_neg_100:
+            # Extract information
+            question = item["question"]
+            product_id = item["product_id"]
+            label = item["label"]
+            aspect = item["aspect"]
+            answer = item["answer"]
 
-    for item in blocks_neg_100:
+            # Save OpinionConv Response
+            print("# save OpinionConv Response")
+            opinion_conv_response = answer
 
-        # extract information from object
-        question = item["question"]
-        product_id = item["product_id"]
-        label = item["label"]
-        aspect = item["aspect"]
-        answer = item["answer"]
+            # Save llm response
+            print("save llm response")
+            llm_response = get_llm_response(question, label, aspect, product_id)
 
-        # save OpinionConv Response
-        opinion_conv_response = answer
+            # Save vanilla rag response
+            print("save vanilla rag response")
+            vanilla_rag_response = get_vanilla_rag_response(question)
 
-        # save llm response
-        llm_response = get_llm_response(question, label, aspect, product_id)
+            # Save our rag response
+            print("save our rag response")
+            our_rag_response = get_our_rag_response(question, label, aspect, product_id)
 
-        # save vanilla rag response
-        vanilla_rag_response = get_vanilla_rag_response(question)
-
-        # save our rag response
-        our_rag_response = get_our_rag_response(question, label, aspect, product_id)
-
-        # write in csv
-        writer.writerow(
-            {
+            # Write in csv
+            writer.writerow({
                 "query": question,
                 "opinion_conv_response": opinion_conv_response,
                 "llm_response": llm_response,
                 "vanilla_rag_response": vanilla_rag_response,
                 "our_rag_response": our_rag_response,
-            }
-        )
+            })
