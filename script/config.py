@@ -25,6 +25,10 @@ conversation_mapping = {
     "Opos1B_Oneg2B": "negative"
 }
 
+with open("key.json","r") as f:
+    token = json.load(f)
+
+access_token = token["token"]
 model_singleton = {}
 
 def get_embedding_model():
@@ -40,7 +44,7 @@ def get_embedding_model():
 
 def get_reader_model():
     if 'reader_model' not in model_singleton:
-        READER_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
+        READER_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
@@ -48,11 +52,11 @@ def get_reader_model():
             bnb_4bit_compute_dtype=torch.bfloat16,
         )
         model = AutoModelForCausalLM.from_pretrained(
-            READER_MODEL_NAME, quantization_config=bnb_config, device_map="auto"
+            READER_MODEL_NAME, token=access_token,quantization_config=bnb_config, device_map="auto"
         )
         model.config.use_cache = False
         model.config.pretraining_tp = 1
-        tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME, device_map="auto")
+        tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME,token=access_token, device_map="auto")
         model_singleton['reader_model'] = pipeline(
             model=model,
             tokenizer=tokenizer,
@@ -67,6 +71,6 @@ def get_reader_model():
 
 def get_tokenizer():
     if 'tokenizer' not in model_singleton:
-        READER_MODEL_NAME = "meta-llama/Meta-Llama-3-8B"
-        model_singleton['tokenizer'] = AutoTokenizer.from_pretrained(READER_MODEL_NAME, device_map="auto")
+        READER_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+        model_singleton['tokenizer'] = AutoTokenizer.from_pretrained(READER_MODEL_NAME, token=access_token,device_map="auto")
     return model_singleton['tokenizer']

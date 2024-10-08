@@ -5,35 +5,35 @@ from nanoid import generate
 import pickle
 
 def extract_question_answer_pairs(data):
-    
     qa_pairs = []
-    #unique_ids = set()
     unique_conv_types = set()
-
+    unique_ids = set()
+    print("Zain")
 
     for product_key, product_data in data.items():
         #print(product_key)
         for conv_type, conv_type_data in product_data.items():
-            #print(conv_type)
             #print("conv_type_data: ",conv_type_data)
             for conv_key, conv_data in conv_type_data.items():
+                #print(conv_key)
                 #pprint.pprint(conv_key)
                 if conv_type == 'Qpos1A_Apos1A':
                     for pair_key, pair_data in conv_data.items():
-                        #pprint.pprint(pair_key)
-                        #pprint.pprint(pair_data)
+                        
                         if 'Qpos1A' in pair_key:
                             question = pair_data['Question']
                             #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            unique_ids.add(product_id)
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
                             #key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            unique_ids.add(product_id)
                     unique_id=generate(size=10) 
                     qa_pairs.append({
                             "unique_id":unique_id,
@@ -50,14 +50,14 @@ def extract_question_answer_pairs(data):
                 else:
                     counter = 1
                     for pair_key, pair_data in conv_data.items():
-                        #pprint.pprint(pair_key)
-                        #pprint.pprint(pair_data)
+                        
                         if counter == 1:
                             question = pair_data['Opinion']
                             #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            unique_ids.add(product_id)
                             counter += 1
                         elif counter == 2:
                             answer = pair_data['Opinion']
@@ -65,6 +65,7 @@ def extract_question_answer_pairs(data):
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            unique_ids.add(product_id)
                     unique_id=generate(size=10)
                     qa_pairs.append({
                             "unique_id":unique_id,
@@ -85,7 +86,7 @@ def extract_question_answer_pairs(data):
                 #     return qa_pairs, unique_ids, unique_conv_types
 
 
-    return qa_pairs, unique_conv_types
+    return qa_pairs, unique_ids, unique_conv_types
 
 def load_json(file_path):
     """Load data from a JSON file."""
@@ -99,7 +100,7 @@ def load_json(file_path):
 
 # File path to your JSON file
 #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/100_blocks_neg.pkl"
+file_path = "/home/stud/abedinz1/localDisk/opinionconv-refactor/100_blocks_neg.json"
 
 #file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/dataset.json"
 
@@ -107,10 +108,11 @@ file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/100_blocks_neg.pkl"
 # Load data from JSON file
 #data = load_json(file_path)
 
-with open(file_path, 'rb') as f:
-    data = pickle.load(f)
+with open(file_path, 'r') as f:
+    data = json.load(f)
 
-qa_pairs, unique_conv_types = extract_question_answer_pairs(data)
+
+qa_pairs, unique_ids, unique_conv_types = extract_question_answer_pairs(data)
 
 # File path to save the Python list
 file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl"
@@ -121,13 +123,14 @@ with open(file_path, "wb") as f:
 
 
 # # File path to save the Python list
-# file_path = "../../data/unique_ids.pickle"
+file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/unique_product_ids.pkl"
 
 
 # # Open the file in binary mode
-# with open(file_path, 'wb') as file:
-#     # Serialize and write the variable to the file
-#     pickle.dump(unique_ids, file, protocol=4)
+with open(file_path, 'wb') as file:
+    print(unique_ids)
+    # Serialize and write the variable to the file
+    pickle.dump(unique_ids, file, protocol=4)
     
 # print("unique conv type: ", unique_conv_types)
 
