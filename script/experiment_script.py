@@ -31,9 +31,9 @@ Question: {question}
 """
 
 # #Comment this line when you dont have the vector database
-# vector_database = FAISS.load_local(
-#         "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-#     )
+vector_database = FAISS.load_local(
+        "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
+    )
 def transform_data(data):
     with open('/home/stud/abedinz1/localDisk/opinionconv-refactor/final_reviews_after_absa.json', 'r') as f:
         orignal_data = json.load(f)
@@ -139,7 +139,7 @@ def get_vanilla_rag_response(question, llm):
 
     # Generate the answer using the large language model
     answer = llm(final_prompt)[0]["generated_text"]
-    return answer
+    return answer, final_prompt
 
 
 def get_our_rag_response(question, label, aspect, product_id, answer, llm):
@@ -187,6 +187,7 @@ def get_our_rag_response(question, label, aspect, product_id, answer, llm):
     print("Relevant Doc in OURS:")
     pprint.pprint(relevant_doc)
     answer = ""
+    final_prompt=""
     if relevant_doc:
         relevant_doc = relevant_doc[0]
         relevant_page_content = relevant_doc.page_content
@@ -196,7 +197,7 @@ def get_our_rag_response(question, label, aspect, product_id, answer, llm):
 
         # Generate the answer using the large language model
         answer = llm(final_prompt)[0]["generated_text"]
-    return answer
+    return answer, final_prompt
 
 if __name__ == '__main__':
     # Load pickled data
@@ -212,7 +213,9 @@ if __name__ == '__main__':
             "opinion_conv_response",
             "llm_response",
             "vanilla_rag_response",
+            "vanilla_rag_prompt",
             "our_rag_response",
+            "our_rag_prompt"
         ]
         writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
         writer.writeheader()
@@ -228,32 +231,34 @@ if __name__ == '__main__':
             answer = item["answer"]
             
           
-            # # Save OpinionConv Response
-            # print("# save OpinionConv Response")
-            # opinion_conv_response = answer
+            # Save OpinionConv Response
+            print("# save OpinionConv Response")
+            opinion_conv_response = answer
 
-            # # Save llm response
-            # print("save llm response")
-            # llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
+            # Save llm response
+            print("save llm response")
+            llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
 
             #Save vanilla rag response
             print("save vanilla rag response")
-            vanilla_rag_response = get_vanilla_rag_response(question, get_reader_model())
+            vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
 
             # #Save our rag response
-            # print("save our rag response")
-            # our_rag_response = get_our_rag_response(question, label, aspect, product_id, answer, get_reader_model())
+            print("save our rag response")
+            our_rag_response, our_rag_prompt = get_our_rag_response(question, label, aspect, product_id, answer, get_reader_model())
 
             # Write in csv
             writer.writerow({
                 "query": question,
-                #"opinion_conv_response": opinion_conv_response,
-                #"llm_response": llm_response,
+                "opinion_conv_response": opinion_conv_response,
+                "llm_response": llm_response,
                 "vanilla_rag_response": vanilla_rag_response,
-                #"our_rag_response": our_rag_response,
+                "vanilla_rag_prompt": vanilla_rag_prompt,
+                "our_rag_response": our_rag_response,
+                "our_rag_prompt":our_rag_prompt
             })
 
 
             # counter+=1
-            # if counter>2:
+            # if counter>5:
             #     break
