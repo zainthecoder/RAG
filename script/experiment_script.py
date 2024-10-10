@@ -30,7 +30,7 @@ Answer the question based on the above detailed_information/context and persona:
 Question: {question}
 """
 
-# #Comment this line when you dont have the vector database
+#Comment this line when you dont have the vector database
 vector_database = FAISS.load_local(
         "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
     )
@@ -87,6 +87,8 @@ def create_vector_database():
     transformed_data = transform_data(data)
 
     ds = Dataset.from_list(transformed_data)
+    document_count = len(ds)
+    print(f"Number of documents in the dataset: {document_count}")
     c=0
     for doc in ds:
         print("\n")
@@ -148,40 +150,45 @@ def get_our_rag_response(question, label, aspect, product_id, answer, llm):
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
-
     if label == "Qpos1A_Apos1A":
+        print(f"label: {label}")
         relevant_doc = vector_database.similarity_search(
         query=question, 
-        k=1000,
         filter=dict(
             productId= product_id,
             aspect= aspect,
             polarity= 'Positive'
-        )
+        ),
+        k=1,  # Number of results to return
+        fetch_k=96206 # Number of results to fetch before filtering
         )
         
     elif label == "Oneg1A_Opos1A":
+        print(f"label: {label}")
 
         relevant_doc = vector_database.similarity_search(
         query=question, 
-        k=1000,
         filter=dict(
             productId= product_id,
             aspect= aspect,
             polarity= 'Positive'
-        )
+        ),
+        k=1,  # Number of results to return
+        fetch_k=96206
         )
         
     elif label == "Oneg1A_Opos1B":
+        print(f"label: {label}")
 
         relevant_doc = vector_database.similarity_search(
         query=question, 
-        k=1000,
         filter=dict(
             productId= {"$ne": product_id},
             aspect= aspect,
             polarity= 'Positive'
-        )
+        ),
+        k=1,  # Number of results to return
+        fetch_k=96206
         )
     
     print("Relevant Doc in OURS:")
@@ -189,6 +196,7 @@ def get_our_rag_response(question, label, aspect, product_id, answer, llm):
     answer = ""
     final_prompt=""
     if relevant_doc:
+        
         relevant_doc = relevant_doc[0]
         relevant_page_content = relevant_doc.page_content
         final_prompt = prompt_in_chat_format.format(
@@ -231,17 +239,17 @@ if __name__ == '__main__':
             answer = item["answer"]
             
           
-            # Save OpinionConv Response
-            print("# save OpinionConv Response")
-            opinion_conv_response = answer
+            # # Save OpinionConv Response
+            # print("# save OpinionConv Response")
+            # opinion_conv_response = answer
 
-            # Save llm response
-            print("save llm response")
-            llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
+            # # Save llm response
+            # print("save llm response")
+            # llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
 
-            #Save vanilla rag response
-            print("save vanilla rag response")
-            vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
+            # #Save vanilla rag response
+            # print("save vanilla rag response")
+            # vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
 
             # #Save our rag response
             print("save our rag response")
@@ -250,10 +258,10 @@ if __name__ == '__main__':
             # Write in csv
             writer.writerow({
                 "query": question,
-                "opinion_conv_response": opinion_conv_response,
-                "llm_response": llm_response,
-                "vanilla_rag_response": vanilla_rag_response,
-                "vanilla_rag_prompt": vanilla_rag_prompt,
+                # "opinion_conv_response": opinion_conv_response,
+                # "llm_response": llm_response,
+                # "vanilla_rag_response": vanilla_rag_response,
+                # "vanilla_rag_prompt": vanilla_rag_prompt,
                 "our_rag_response": our_rag_response,
                 "our_rag_prompt":our_rag_prompt
             })
