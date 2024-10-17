@@ -93,6 +93,7 @@ def create_vector_database():
     for doc in ds:
         print("\n")
         pprint.pprint(doc)
+        print(f'{doc["asin"]}_{doc["user_id"]}')
         c+=1
         if c>5:
             break
@@ -106,6 +107,7 @@ def create_vector_database():
                 "productId": doc["asin"],
                 "aspect": doc["aspect"],
                 "polarity": doc["sentiment"],
+                "reviewId": f'{doc["asin"]}_{doc["user_id"]}',
             },
         )
         for doc in ds
@@ -154,7 +156,7 @@ def get_our_rag_response(question, label, aspect, product_id,review_id, answer, 
         'productId': product_id,
         'aspect': aspect,
         'polarity': 'Positive',
-        'reviewId': {"$nin": review_id}
+        'reviewId': {"$neq": review_id}
     }
     
     # Modify filters based on label
@@ -172,8 +174,11 @@ def get_our_rag_response(question, label, aspect, product_id,review_id, answer, 
 
     elif label == "Opos1B_Oneg2B":
         print(f"label: {label}")
-        base_filter['aspect'] = {"$nin": aspect}
+        base_filter['aspect'] = {"$ne": aspect}
         base_filter['polarity'] = 'Negative'
+
+    print("filter")
+    print(base_filter)
 
     # Perform similarity search
     relevant_doc = vector_database.similarity_search(
@@ -232,7 +237,7 @@ if __name__ == '__main__':
             label = item["label"]
             aspect = item["aspect"]
             answer = item["answer"]
-            review_id = item["review_id"]            
+            review_id ="_".join(item["review_id"].split("_")[:2])          
           
             # # Save OpinionConv Response
             # print("# save OpinionConv Response")
@@ -243,8 +248,8 @@ if __name__ == '__main__':
             # llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
 
             # #Save vanilla rag response
-            # print("save vanilla rag response")
-            # vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
+            print("save vanilla rag response")
+            vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
 
             # #Save our rag response
             print("save our rag response")
