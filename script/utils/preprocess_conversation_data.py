@@ -26,6 +26,7 @@ def extract_question_answer_pairs(data):
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            review_id = pair_data['Labels']['Key']
                             unique_ids.add(product_id)
                         elif 'Apos1A' in pair_key:
                             answer = pair_data['Answer']
@@ -33,6 +34,7 @@ def extract_question_answer_pairs(data):
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            review_id = pair_data['Labels']['Key']
                             unique_ids.add(product_id)
                     unique_id=generate(size=10) 
                     qa_pairs.append({
@@ -44,7 +46,8 @@ def extract_question_answer_pairs(data):
                             "answer":answer,
                             "label": "Qpos1A_Apos1A",
                             "aspect": aspect,
-                            "polarity": polarity
+                            "polarity": polarity,
+                            "review_id": review_id
                         })
                     unique_conv_types.add(conv_type)
                 else:
@@ -57,6 +60,11 @@ def extract_question_answer_pairs(data):
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            review_id = pair_data['Labels']['Key']
+                            if conv_type == "Oneg1A_Opos1B":
+                                bought_together = pair_data['Labels']['bought_together']
+                            else:
+                                bought_together = []
                             unique_ids.add(product_id)
                             counter += 1
                         elif counter == 2:
@@ -65,6 +73,7 @@ def extract_question_answer_pairs(data):
                             product_id = pair_data['Labels']['Key'].split("_")[0]
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
+                            review_id = pair_data['Labels']['Key']
                             unique_ids.add(product_id)
                     unique_id=generate(size=10)
                     qa_pairs.append({
@@ -76,7 +85,9 @@ def extract_question_answer_pairs(data):
                             "answer":answer,
                             "label": conv_type,
                             "aspect": aspect,
-                            "polarity": polarity
+                            "polarity": polarity,
+                            "bought_together": bought_together,
+                            "review_id": review_id
                         })
                     unique_conv_types.add(conv_type)
 
