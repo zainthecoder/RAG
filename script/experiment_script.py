@@ -30,35 +30,16 @@ Answer the question based on the above detailed_information/context and persona:
 Question: {question}
 """
 
-#Comment this line when you dont have the vector database
+# Comment this line when you dont have the vector database
 vector_database = FAISS.load_local(
-        "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
-    )
-# def transform_data(data):
-#     with open('/home/stud/abedinz1/localDisk/opinionconv-refactor/final_reviews_after_absa.json', 'r') as f:
-#         orignal_data = json.load(f)
+    "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index",
+    get_embedding_model(),
+    allow_dangerous_deserialization=True,
+)
 
-#     orignal_data_with_single_aspect = []
-
-#     for entry in orignal_data:
-#         aspects = entry.get("aspect", [])
-#         sentiments = entry.get("sentiment", [])
-        
-#         # If there are multiple aspects or sentiments, create new entries for each
-#         max_len = max(len(aspects), len(sentiments))
-#         if max_len == 0:
-#             pass
-#         else:
-#             for i in range(max_len):
-#                 new_entry = entry.copy()
-#                 new_entry["aspect"] = aspects[i]
-#                 new_entry["sentiment"] = sentiments[i]
-#                 orignal_data_with_single_aspect.append(new_entry)
-        
-#     return orignal_data_with_single_aspect
 
 def get_llm_response(question, llm, label="", aspect="", product_id=""):
-    detailed_information=""
+    detailed_information = ""
     if label == "Qpos1A_Apos1A":
         detailed_information = f"The answer should have positive polarity about aspect: {aspect} and about same product with product id: {product_id}"
     elif label == "Oneg1A_Opos1A":
@@ -80,24 +61,27 @@ def create_vector_database():
 
     print("Creating Vector Database")
 
-    with open("/home/stud/abedinz1/localDisk/opinionconv-refactor/transformed_data_for_vector_database.json", 'r') as file:
+    with open(
+        "/home/stud/abedinz1/localDisk/opinionconv-refactor/transformed_data_for_vector_database.json",
+        "r",
+    ) as file:
         data = json.load(file)
-    
+
     # Transform the data
-    #transformed_data = transform_data(data)
+    # transformed_data = transform_data(data)
+
 
     ds = Dataset.from_list(data)
     document_count = len(ds)
     print(f"Number of documents in the dataset: {document_count}")
-    c=0
+    c = 0
     for doc in ds:
         print("\n")
         pprint.pprint(doc)
         print(f'{doc["asin"]}_{doc["user_id"]}')
-        c+=1
-        if c>5:
+        c += 1
+        if c > 5:
             break
-
 
     # """Preprocess documents for Langchain."""
     raw_knowledge_base = [
@@ -129,12 +113,11 @@ def get_vanilla_rag_response(question, llm):
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
-    print("question: ",question)
     relevant_doc = vector_database.similarity_search(query=question, k=1)
 
     pprint.pprint("Relevant Doc in vanilla:")
     pprint.pprint(relevant_doc)
-    
+
     relevant_doc = relevant_doc[0]
     relevant_page_content = relevant_doc.page_content
     final_prompt = prompt_in_chat_format.format(
@@ -146,61 +129,70 @@ def get_vanilla_rag_response(question, llm):
     return answer, final_prompt
 
 
-def get_our_rag_response(question, label, aspect, product_id,review_id, answer, llm, bought_together=[]):
+def get_our_rag_response(
+    question, label, aspect, product_id, review_id, answer, llm, bought_together=[]
+):
     # Create vector database if not exists
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
         create_vector_database()
 
     # Define default filter and search settings
     base_filter = {
-        'productId': product_id,
-        'aspect': aspect,
-        'polarity': 'Positive',
-        #'reviewId': {"$neq": review_id}
+        "productId": product_id,
+        "aspect": aspect,
+        "polarity": "Positive",
     }
 
-    #base_filter = {}
-    
-    # Modify filters based on label
-    if label == "Qpos1A_Apos1A" or label == "Oneg1A_Opos1A":
-        print(f"label: {label}")
-        # Same as base_filter
+    # # Modify filters based on label
+    # if label == "Qpos1A_Apos1A" or label == "Oneg1A_Opos1A":
+    #     print(f"label: {label}")
+    #     # Same as base_filter
 
-    elif label == "Oneg1A_Opos1B":
-        print(f"label: {label}")
-        #base_filter['productId'] = {"$in": bought_together}
+    # elif label == "Oneg1A_Opos1B":
+    #     #print(f"label: {label}")
+    #     # base_filter['productId'] = {"$in": bought_together}
 
-    elif label == "Oneg1A_Opos2A" or label == "Opos1B_Opos2B":
-        print(f"label: {label}")
-        #base_filter['aspect'] = {"$nin": aspect}
+    # elif label == "Oneg1A_Opos2A" or label == "Opos1B_Opos2B":
+    #     #print(f"label: {label}")
 
-    elif label == "Opos1B_Oneg2B":
-        print(f"label: {label}")
-        #base_filter['aspect'] = {"$ne": aspect}
-        base_filter['polarity'] = 'Negative'
+    if label == "Opos1B_Oneg2B":
+        #print(f"label: {label}")
+        base_filter["polarity"] = "Negative"
 
-    print("filter")
-    print(base_filter)
+    ##print("filter")
+    #print(base_filter)
 
     # Perform similarity search
     relevant_docs = vector_database.similarity_search(
-        query=question, 
+        query=question,
         filter=base_filter,
         k=10,  # Number of results to return
-        fetch_k=1000  # Number of results to fetch before filtering
+        fetch_k=96206,  # Number of results to fetch before filtering
     )
 
-    print("\nReview Id: ",review_id)
-    print("\n")
+    #print("\nReview Id: ", review_id)
+    #print("\n")
 
-    print("before filtering from reviewId:")
-    pprint.pprint(relevant_docs)
-    print("long Result")
+    #print("1:", relevant_docs)
     # Post-filtering to apply $ne condition on reviewId
-    filtered_docs = [doc for doc in relevant_docs if doc.metadata['reviewId'] != review_id]
+    filtered_docs = [
+        doc for doc in relevant_docs if doc.metadata["reviewId"] != review_id
+    ]
+    #print("2:", filtered_docs)
+    if label == "Oneg1A_Opos2A" or label == "Opos1B_Opos2B" or label == "Opos1B_Oneg2B":
+        filtered_docs = [
+            doc for doc in relevant_docs if doc.metadata["aspect"] != aspect
+        ]
 
-    print("\nRelevant Doc in OURS:")
-    pprint.pprint(filtered_docs)
+    #print("3:", filtered_docs)
+    if label == "Oneg1A_Opos1B":
+        filtered_docs = [
+            doc for doc in relevant_docs if doc.metadata["product_id"] != product_id
+        ]
+    #print("3:", filtered_docs)
+
+    ##print("\nRelevant Doc in OURS:")
+    #pprint.pprint(filtered_docs)
 
     # Generate the response using LLM
     answer = ""
@@ -214,20 +206,24 @@ def get_our_rag_response(question, label, aspect, product_id,review_id, answer, 
         # Generate answer using the large language model
         answer = llm(final_prompt)[0]["generated_text"]
 
-    print("########")
-    
-    return answer, final_prompt
+    #print("########")
+
+    return answer, final_prompt, relevant_doc
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Load pickled data
-    with open("/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", 'rb') as f:
+    with open(
+        "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", "rb"
+    ) as f:
         blocks_neg_100 = pickle.load(f)
 
-    counter=0
+    counter = 0
 
     # Writing to CSV file
-    with open("output_file_path.csv", "w", newline="", encoding="utf-8") as output_file_path:
+    with open(
+        "output_file_path.csv", "w", newline="", encoding="utf-8"
+    ) as output_file_path:
         fieldnames = [
             "query",
             "opinion_conv_response",
@@ -236,56 +232,70 @@ if __name__ == '__main__':
             "vanilla_rag_prompt",
             "our_rag_response",
             "our_rag_prompt",
-            "label"
+            "label",
+            "relevant_doc",
         ]
         writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
         writer.writeheader()
 
-        print(len(blocks_neg_100))
-        #for item in blocks_neg_100:
+        
+        # for item in blocks_neg_100:
         for i in range(0, len(blocks_neg_100), 100):
             item = blocks_neg_100[i]
-            print("\n\n")
-
+            
             # Extract information
             question = item["question"]
             product_id = item["product_id"]
             label = item["label"]
             aspect = item["aspect"]
             answer = item["answer"]
-            review_id =item["review_id"]          
-          
-            # # Save OpinionConv Response
-            # print("# save OpinionConv Response")
-            # opinion_conv_response = answer
+            review_id = item["review_id"]
+            # bought_together = item["bought_together"]
 
-            # # Save llm response
-            # print("save llm response")
-            # llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
+            # Save OpinionConv Response
+            print("# save OpinionConv Response")
+            opinion_conv_response = answer
 
-            # #Save vanilla rag response
-            #print("save vanilla rag response")
-            vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
+            # Save llm response
+            print("save llm response")
+            llm_response = get_llm_response(
+                question, get_reader_model(), label, aspect, product_id
+            )
+
+            # Save vanilla rag response
+            print("save vanilla rag response")
+            vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(
+                question, get_reader_model()
+            )
 
             # #Save our rag response
             print("save our rag response")
-            print("Query: ",question)
-            print("\n")
-            our_rag_response, our_rag_prompt = get_our_rag_response(question, label, aspect, product_id, review_id, answer, get_reader_model())
+            our_rag_response, our_rag_prompt, relevant_doc = get_our_rag_response(
+                question,
+                label,
+                aspect,
+                product_id,
+                review_id,
+                answer,
+                get_reader_model(),
+                bought_together=[],
+            )
 
             # Write in csv
-            writer.writerow({
-                "query": question,
-                # "opinion_conv_response": opinion_conv_response,
-                # "llm_response": llm_response,
-                # "vanilla_rag_response": vanilla_rag_response,
-                # "vanilla_rag_prompt": vanilla_rag_prompt,
-                "our_rag_response": our_rag_response,
-                "our_rag_prompt":our_rag_prompt,
-                "label": label
-            })
+            writer.writerow(
+                {
+                    "query": question,
+                    "opinion_conv_response": opinion_conv_response,
+                    "llm_response": llm_response,
+                    "vanilla_rag_response": vanilla_rag_response,
+                    "vanilla_rag_prompt": vanilla_rag_prompt,
+                    "our_rag_response": our_rag_response,
+                    "our_rag_prompt": our_rag_prompt,
+                    "label": label,
+                    "our_relevant_doc": relevant_doc,
+                }
+            )
 
-
-            # counter+=1
-            # if counter>5:
-            #     break
+            counter+=1
+            if counter>5:
+                break

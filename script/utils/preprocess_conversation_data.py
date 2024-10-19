@@ -1,190 +1,137 @@
-import json
 import os
-import pprint
+import json
 from nanoid import generate
 import pickle
+import pprint
 
-def extract_question_answer_pairs(data):
+
+def extract_question_answer_pairs(data_stream):
     qa_pairs = []
-    unique_conv_types = set()
     unique_ids = set()
-    print("Zain")
 
-    for product_key, product_data in data.items():
-        #print(product_key)
-        for conv_type, conv_type_data in product_data.items():
-            #print("conv_type_data: ",conv_type_data)
-            for conv_key, conv_data in conv_type_data.items():
-                #print(conv_key)
-                #pprint.pprint(conv_key)
-                if conv_type == 'Qpos1A_Apos1A':
-                    for pair_key, pair_data in conv_data.items():
-                        
-                        if 'Qpos1A' in pair_key:
-                            question = pair_data['Question']
-                            #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
-                            product_id = pair_data['Labels']['Key'].split("_")[0]
-                            print(product_id)
-                            aspect = pair_data['Labels']['Aspect']
-                            polarity = pair_data['Labels']['Polarity']
-                            review_id = pair_data['Labels']['Key']
-                            unique_ids.add(product_id)
-                        elif 'Apos1A' in pair_key:
-                            answer = pair_data['Answer']
-                            #key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
-                            product_id = pair_data['Labels']['Key'].split("_")[0]
-                            aspect = pair_data['Labels']['Aspect']
-                            polarity = pair_data['Labels']['Polarity']
-                            review_id = pair_data['Labels']['Key']
-                            unique_ids.add(product_id)
-                    unique_id=generate(size=10) 
-                    qa_pairs.append({
-                            "unique_id":unique_id,
-                            #"key_question":key_question,
-                            #"key_answer":key_answer,
-                            "product_id":product_id,
-                            "question":question,
-                            "answer":answer,
-                            "label": "Qpos1A_Apos1A",
-                            "aspect": aspect,
-                            "polarity": polarity,
-                            "review_id": review_id
-                        })
-                    unique_conv_types.add(conv_type)
+    for data in data_stream:
+        # print("product_data")
+        # pprint.pprint(product_data)
+        for product_key, product_data in data.items():
+            print("product_key:", product_key)
+            # Assuming product_data is a dictionary for each product
+            for conv_type, conv_type_data in product_data.items():
+                print("conv_type", conv_type)
+                # print("conv_type_data:",conv_type_data)
+                if conv_type == "Qpos1A_Apos1A":
+                    question, answer = None, None
+                    for pair_key, pair_data in conv_type_data.items():
+                        for key, value in pair_data.items():
+                            if "Qpos1A" in key:
+                                question = value["Question"]
+                                product_id = value["Labels"]["Key"].split("_")[0]
+                                aspect = value["Labels"]["Aspect"]
+                                polarity = value["Labels"]["Polarity"]
+                                review_id = value["Labels"]["Key"]
+                                unique_ids.add(product_id)
+                            elif "Apos1A" in key:
+                                answer = value["Answer"]
+                                product_id = value["Labels"]["Key"].split("_")[0]
+                                aspect = value["Labels"]["Aspect"]
+                                polarity = value["Labels"]["Polarity"]
+                                review_id = value["Labels"]["Key"]
+                                unique_ids.add(product_id)
+                    if question and answer:
+                        unique_id = generate(size=10)
+                        qa_pairs.append(
+                            {
+                                "unique_id": unique_id,
+                                "product_id": product_id,
+                                "question": question,
+                                "answer": answer,
+                                "label": "Qpos1A_Apos1A",
+                                "aspect": aspect,
+                                "polarity": polarity,
+                                "review_id": review_id,
+                            }
+                        )
                 else:
-                    counter = 1
-                    for pair_key, pair_data in conv_data.items():
-                        
-                        if counter == 1:
-                            question = pair_data['Opinion']
-                            #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
-                            product_id = pair_data['Labels']['Key'].split("_")[0]
-                            #print(product_id)
-                            aspect = pair_data['Labels']['Aspect']
-                            polarity = pair_data['Labels']['Polarity']
-                            review_id = pair_data['Labels']['Key']
-                            if conv_type == "Oneg1A_Opos1B":
-                                bought_together = pair_data['Labels']['bought_together']
-                            else:
-                                bought_together = []
-                            unique_ids.add(product_id)
-                            counter += 1
-                        elif counter == 2:
-                            answer = pair_data['Opinion']
-                            #key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
-                            product_id = pair_data['Labels']['Key'].split("_")[0]
-                            #print(product_id)
-                            aspect = pair_data['Labels']['Aspect']
-                            polarity = pair_data['Labels']['Polarity']
-                            review_id = pair_data['Labels']['Key']
-                            unique_ids.add(product_id)
-                    unique_id=generate(size=10)
-                    qa_pairs.append({
-                            "unique_id":unique_id,
-                            #"key_question":key_question,
-                            #"key_answer":key_answer,
-                            "product_id":product_id,
-                            "question":question,
-                            "answer":answer,
-                            "label": conv_type,
-                            "aspect": aspect,
-                            "polarity": polarity,
-                            "bought_together": bought_together,
-                            "review_id": review_id
-                        })
-                    unique_conv_types.add(conv_type)
+                    counter = 0
+                    for pair_key, pair_data in conv_type_data.items():
+                        if counter == 0:
+                            print("pair_key:   ", pair_key)
+                            print("pair_data", pair_data)
+                            for key, value in pair_data.items():
+                                question = value["Opinion"]
+                                product_id = value["Labels"]["Key"].split("_")[0]
+                                aspect = value["Labels"]["Aspect"]
+                                polarity = value["Labels"]["Polarity"]
+                                review_id = value["Labels"]["Key"]
+                                if conv_type == "Oneg1A_Opos1B":
+                                    bought_together = value["Labels"]["bought_together"]
+                                else:
+                                    bought_together = []
+                                unique_ids.add(product_id)
+                        elif counter == 1:
+                            for key, value in pair_data.items():
+                                answer = value["Opinion"]
+                                product_id = value["Labels"]["Key"].split("_")[0]
+                                aspect = value["Labels"]["Aspect"]
+                                polarity = value["Labels"]["Polarity"]
+                                review_id = value["Labels"]["Key"]
+                                unique_ids.add(product_id)
+                        counter += 1
 
-                #unique_ids.add(key_question)
-                #unique_ids.add(key_answer)
-                # if len(unique_ids) >= 100:
-                #     return qa_pairs, unique_ids, unique_conv_types
+                    if question and answer:
+                        unique_id = generate(size=10)
+                        qa_pairs.append(
+                            {
+                                "unique_id": unique_id,
+                                "product_id": product_id,
+                                "question": question,
+                                "answer": answer,
+                                "label": conv_type,
+                                "aspect": aspect,
+                                "polarity": polarity,
+                                "review_id": review_id,
+                            }
+                        )
+
+    return qa_pairs, unique_ids
 
 
-    return qa_pairs, unique_ids, unique_conv_types
-
-def load_json(file_path):
-    """Load data from a JSON file."""
+def load_jsonl_stream(file_path):
+    """Load data from a large JSONL file line by line."""
     if not os.path.exists(file_path):
         print(f"File '{file_path}' not found.")
         return []
+
+    # Open the file and yield each line as a JSON object
     with open(file_path, "r") as f:
-        data = json.load(f)
-    return data
+        for line in f:
+            try:
+                yield json.loads(line)
+            except json.JSONDecodeError as e:
+                raise Error(e)  # Handle invalid JSON lines gracefully
 
 
-# File path to your JSON file
-#file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/100_blocks_neg.json"
-file_path = "/home/stud/abedinz1/localDisk/opinionconv-refactor/100_blocks_neg.json"
+# File path to your large JSONL file
+file_path = "/home/stud/abedinz1/localDisk/opinionconv-refactor/100_blocks_neg.jsonl"
 
-#file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/dataset.json"
+# Load data from the JSONL file as a stream
+data_stream = load_jsonl_stream(file_path)
 
+# Extract question-answer pairs
+qa_pairs, unique_ids = extract_question_answer_pairs(data_stream)
 
-# Load data from JSON file
-#data = load_json(file_path)
-
-with open(file_path, 'r') as f:
-    data = json.load(f)
-
-
-qa_pairs, unique_ids, unique_conv_types = extract_question_answer_pairs(data)
-
-# File path to save the Python list
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl"
-
-# Save qa_pairs as a Python list to a JSON file
-with open(file_path, "wb") as f:
+# Save qa_pairs as a Python list to a pickle file
+output_file_path = (
+    "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl"
+)
+with open(output_file_path, "wb") as f:
     pickle.dump(qa_pairs, f)
 
+# Save unique IDs to another pickle file
+unique_ids_file_path = (
+    "/home/stud/abedinz1/localDisk/RAG/RAG/data/unique_product_ids.pkl"
+)
+with open(unique_ids_file_path, "wb") as file:
+    pickle.dump(unique_ids, file)
+print("unique_ids", unique_ids)
 
-# # File path to save the Python list
-file_path = "/home/stud/abedinz1/localDisk/RAG/RAG/data/unique_product_ids.pkl"
-
-
-# # Open the file in binary mode
-with open(file_path, 'wb') as file:
-    print(unique_ids)
-    # Serialize and write the variable to the file
-    pickle.dump(unique_ids, file, protocol=4)
-    
-# print("unique conv type: ", unique_conv_types)
-
- # "B00836Y6B2": {
- #        "Opos1B_Opos1B2_only_agreement": {
- #            "Opos1B_Opos1B2_1": {
- #                "Opos1B": {
- #                    "Opinion": "I was wondering if you have this phone B00836Y6B2, it might be a good choice because as far as I know about its price, Good product, great price.",
- #                        "Labels": {
- #                        "Key": "B00836Y6B2_AFGB723G8ECAX_0_0",
- #                            "Aspect": "price",
- #                                "Polarity": "positive"
- #                    }
- #                },
- #                "Opos1B2": {
- #                    "Opinion": "Yes, That's so true. This phone is also a good choice",
- #                        "Labels": {
- #                        "Key": "B00836Y6B2_AFGB723G8ECAX_0_0",
- #                            "Aspect": "price",
- #                                "Polarity": "positive"
- #                    }
- #                }
- #            },
- #   "B00836Y6B2": {
- #        "Qpos1A_Apos1A": {
- #            "Qpos1A_Apos1A_1": {
- #                "Qpos1A": {
- #                    "Question": "In your honest opinion, how is its price?",
- #                        "Labels": {
- #                        "Key": "B00836Y6B2_AFGB723G8ECAX_0_0",
- #                            "Aspect": "price",
- #                                "Polarity": "positive"
- #                    }
- #                },
- #                "Apos1A": {
- #                    "Answer": "Good product, great price.",
- #                        "Labels": {
- #                        "Key": "B00836Y6B2_AFGB723G8ECAX_0_0",
- #                            "Aspect": "price",
- #                                "Polarity": "positive"
- #                    }
- #                }
- #            },
+print(f"Processed {len(qa_pairs)} question-answer pairs.")
