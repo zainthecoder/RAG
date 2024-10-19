@@ -34,28 +34,28 @@ Question: {question}
 vector_database = FAISS.load_local(
         "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index", get_embedding_model(), allow_dangerous_deserialization=True
     )
-def transform_data(data):
-    with open('/home/stud/abedinz1/localDisk/opinionconv-refactor/final_reviews_after_absa.json', 'r') as f:
-        orignal_data = json.load(f)
+# def transform_data(data):
+#     with open('/home/stud/abedinz1/localDisk/opinionconv-refactor/final_reviews_after_absa.json', 'r') as f:
+#         orignal_data = json.load(f)
 
-    orignal_data_with_single_aspect = []
+#     orignal_data_with_single_aspect = []
 
-    for entry in orignal_data:
-        aspects = entry.get("aspect", [])
-        sentiments = entry.get("sentiment", [])
+#     for entry in orignal_data:
+#         aspects = entry.get("aspect", [])
+#         sentiments = entry.get("sentiment", [])
         
-        # If there are multiple aspects or sentiments, create new entries for each
-        max_len = max(len(aspects), len(sentiments))
-        if max_len == 0:
-            pass
-        else:
-            for i in range(max_len):
-                new_entry = entry.copy()
-                new_entry["aspect"] = aspects[i]
-                new_entry["sentiment"] = sentiments[i]
-                orignal_data_with_single_aspect.append(new_entry)
+#         # If there are multiple aspects or sentiments, create new entries for each
+#         max_len = max(len(aspects), len(sentiments))
+#         if max_len == 0:
+#             pass
+#         else:
+#             for i in range(max_len):
+#                 new_entry = entry.copy()
+#                 new_entry["aspect"] = aspects[i]
+#                 new_entry["sentiment"] = sentiments[i]
+#                 orignal_data_with_single_aspect.append(new_entry)
         
-    return orignal_data_with_single_aspect
+#     return orignal_data_with_single_aspect
 
 def get_llm_response(question, llm, label="", aspect="", product_id=""):
     detailed_information=""
@@ -80,13 +80,13 @@ def create_vector_database():
 
     print("Creating Vector Database")
 
-    with open("/home/stud/abedinz1/localDisk/opinionconv-refactor/final_reviews_after_absa.json", 'r') as file:
+    with open("/home/stud/abedinz1/localDisk/opinionconv-refactor/transformed_data_for_vector_database.json", 'r') as file:
         data = json.load(file)
     
     # Transform the data
-    transformed_data = transform_data(data)
+    #transformed_data = transform_data(data)
 
-    ds = Dataset.from_list(transformed_data)
+    ds = Dataset.from_list(data)
     document_count = len(ds)
     print(f"Number of documents in the dataset: {document_count}")
     c=0
@@ -107,7 +107,7 @@ def create_vector_database():
                 "productId": doc["asin"],
                 "aspect": doc["aspect"],
                 "polarity": doc["sentiment"],
-                "reviewId": f'{doc["asin"]}_{doc["user_id"]}',
+                "reviewId": f'{doc["asin"]}_{doc["user_id"]}_{doc["unique_key"]}',
             },
         )
         for doc in ds
@@ -156,8 +156,10 @@ def get_our_rag_response(question, label, aspect, product_id,review_id, answer, 
         'productId': product_id,
         'aspect': aspect,
         'polarity': 'Positive',
-        'reviewId': {"$neq": review_id}
+        #'reviewId': {"$neq": review_id}
     }
+
+    #base_filter = {}
     
     # Modify filters based on label
     if label == "Qpos1A_Apos1A" or label == "Oneg1A_Opos1A":
@@ -166,42 +168,53 @@ def get_our_rag_response(question, label, aspect, product_id,review_id, answer, 
 
     elif label == "Oneg1A_Opos1B":
         print(f"label: {label}")
-        base_filter['productId'] = {"$in": bought_together}
+        #base_filter['productId'] = {"$in": bought_together}
 
     elif label == "Oneg1A_Opos2A" or label == "Opos1B_Opos2B":
         print(f"label: {label}")
-        base_filter['aspect'] = {"$nin": aspect}
+        #base_filter['aspect'] = {"$nin": aspect}
 
     elif label == "Opos1B_Oneg2B":
         print(f"label: {label}")
-        base_filter['aspect'] = {"$ne": aspect}
+        #base_filter['aspect'] = {"$ne": aspect}
         base_filter['polarity'] = 'Negative'
 
     print("filter")
     print(base_filter)
 
     # Perform similarity search
-    relevant_doc = vector_database.similarity_search(
+    relevant_docs = vector_database.similarity_search(
         query=question, 
         filter=base_filter,
-        k=1,  # Number of results to return
-        fetch_k=96206  # Number of results to fetch before filtering
+        k=10,  # Number of results to return
+        fetch_k=1000  # Number of results to fetch before filtering
     )
 
-    print("Relevant Doc in OURS:")
-    pprint.pprint(relevant_doc)
+    print("\nReview Id: ",review_id)
+    print("\n")
+
+    print("before filtering from reviewId:")
+    pprint.pprint(relevant_docs)
+    print("long Result")
+    # Post-filtering to apply $ne condition on reviewId
+    filtered_docs = [doc for doc in relevant_docs if doc.metadata['reviewId'] != review_id]
+
+    print("\nRelevant Doc in OURS:")
+    pprint.pprint(filtered_docs)
 
     # Generate the response using LLM
     answer = ""
     final_prompt = ""
-    if relevant_doc:
-        relevant_doc = relevant_doc[0]
+    if filtered_docs:
+        relevant_doc = filtered_docs[0]
         final_prompt = prompt_in_chat_format.format(
             question=question, detailed_information=relevant_doc.page_content
         )
 
         # Generate answer using the large language model
         answer = llm(final_prompt)[0]["generated_text"]
+
+    print("########")
     
     return answer, final_prompt
 
@@ -228,7 +241,10 @@ if __name__ == '__main__':
         writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
         writer.writeheader()
 
-        for item in blocks_neg_100:
+        print(len(blocks_neg_100))
+        #for item in blocks_neg_100:
+        for i in range(0, len(blocks_neg_100), 100):
+            item = blocks_neg_100[i]
             print("\n\n")
 
             # Extract information
@@ -237,7 +253,7 @@ if __name__ == '__main__':
             label = item["label"]
             aspect = item["aspect"]
             answer = item["answer"]
-            review_id ="_".join(item["review_id"].split("_")[:2])          
+            review_id =item["review_id"]          
           
             # # Save OpinionConv Response
             # print("# save OpinionConv Response")
@@ -248,11 +264,13 @@ if __name__ == '__main__':
             # llm_response = get_llm_response(question, get_reader_model(), label, aspect, product_id)
 
             # #Save vanilla rag response
-            print("save vanilla rag response")
+            #print("save vanilla rag response")
             vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(question, get_reader_model())
 
             # #Save our rag response
             print("save our rag response")
+            print("Query: ",question)
+            print("\n")
             our_rag_response, our_rag_prompt = get_our_rag_response(question, label, aspect, product_id, review_id, answer, get_reader_model())
 
             # Write in csv

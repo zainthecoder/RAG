@@ -24,6 +24,7 @@ def extract_question_answer_pairs(data):
                             question = pair_data['Question']
                             #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             product_id = pair_data['Labels']['Key'].split("_")[0]
+                            print(product_id)
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
                             review_id = pair_data['Labels']['Key']
@@ -58,6 +59,7 @@ def extract_question_answer_pairs(data):
                             question = pair_data['Opinion']
                             #key_question = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             product_id = pair_data['Labels']['Key'].split("_")[0]
+                            #print(product_id)
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
                             review_id = pair_data['Labels']['Key']
@@ -71,6 +73,7 @@ def extract_question_answer_pairs(data):
                             answer = pair_data['Opinion']
                             #key_answer = "_".join(pair_data['Labels']['Key'].split("_")[:2])
                             product_id = pair_data['Labels']['Key'].split("_")[0]
+                            #print(product_id)
                             aspect = pair_data['Labels']['Aspect']
                             polarity = pair_data['Labels']['Polarity']
                             review_id = pair_data['Labels']['Key']
