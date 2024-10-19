@@ -197,6 +197,7 @@ def get_our_rag_response(
     # Generate the response using LLM
     answer = ""
     final_prompt = ""
+    relevant_doc = ""
     if filtered_docs:
         relevant_doc = filtered_docs[0]
         final_prompt = prompt_in_chat_format.format(
@@ -233,15 +234,15 @@ if __name__ == "__main__":
             "our_rag_response",
             "our_rag_prompt",
             "label",
-            "relevant_doc",
+            "our_relevant_doc",
         ]
         writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
         writer.writeheader()
 
         
-        # for item in blocks_neg_100:
-        for i in range(0, len(blocks_neg_100), 100):
-            item = blocks_neg_100[i]
+        for item in blocks_neg_100:
+        #for i in range(0, len(blocks_neg_100), 100):
+            #item = blocks_neg_100[i]
             
             # Extract information
             question = item["question"]
@@ -296,6 +297,6 @@ if __name__ == "__main__":
                 }
             )
 
-            counter+=1
-            if counter>5:
-                break
+            # counter+=1
+            # if counter>2:
+            #     break
