@@ -44,7 +44,7 @@ def get_embedding_model():
 
 def get_reader_model():
     if 'reader_model' not in model_singleton:
-        READER_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+        READER_MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
