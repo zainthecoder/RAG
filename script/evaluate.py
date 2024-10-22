@@ -1,8 +1,8 @@
 # Imports
-from config import get_reader_model
+from config import get_reader_model, get_tokenizer
 import csv
 import pprint
-from tqdm import tqdm 
+from tqdm import tqdm
 
 # Load the CSV data
 data = []
@@ -13,26 +13,41 @@ with open("output_file_path.csv", newline="", encoding="utf-8") as csvfile:
 
 
 # Define a function to get the LLM response
-def get_llm_response(prompt, llm):
+def get_llm_response(prompt, llm, tokenizer):
     # Generate the answer using the large language model
     answer = llm(prompt)[0]["generated_text"]
     return answer
 
 
+def prompt_creation(
+    question,
+    response1,
+    response2,
+    response3,
+    response4,
+):
 
-# Prompt template
-prompt_template = """
-You are a brilliant salesperson. Analyze and choose the best response for the following customer query:
+    messages = [
+        {
+            "role": "user",
+            "content": f"""
+    You are a brilliant salesperson. Analyze and choose the best option for the following customer query:
 
-Customer question: {question}
+    Customer question: {question}
 
-Response 1: {response1}
-Response 2: {response2}
-Response 3: {response3}
-Response 4: {response4}
+    Options
+    Option 1: {response1}
+    Option 2: {response2}
+    Option 3: {response3}
+    Option 4: {response4}
 
-Explain why the selected response is the best, with clear reasoning.
-"""
+    Ensure the final answer is clearly indicated by ending with {"The final answer is"}.
+    """,
+        }
+    ]
+
+    return messages
+
 
 # Process the data and write results to a new CSV
 with open("evaluation_file.csv", "w", newline="", encoding="utf-8") as output_file:
@@ -59,7 +74,7 @@ with open("evaluation_file.csv", "w", newline="", encoding="utf-8") as output_fi
         response4 = item.get("our_rag_response", "")
 
         # Format the prompt
-        final_prompt = prompt_template.format(
+        final_prompt = prompt_creation(
             question=question,
             response1=response1,
             response2=response2,
@@ -68,12 +83,13 @@ with open("evaluation_file.csv", "w", newline="", encoding="utf-8") as output_fi
         )
 
         # Get the LLM response
-        llm_response = get_llm_response(final_prompt, llm)
+        llm_response = get_llm_response(
+            final_prompt, get_reader_model(), get_tokenizer()
+        )
 
         print("\n\nNew Question\n")
-        print("final_prompt: ",final_prompt)
-        print("llm_response:",llm_response)
-
+        print("final_prompt: ", final_prompt)
+        print("llm_response:", llm_response)
 
         # Write the results to the CSV
         writer.writerow(
