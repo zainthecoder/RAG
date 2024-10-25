@@ -25,6 +25,20 @@ conversation_mapping = {
     "Opos1B_Oneg2B": "negative"
 }
 
+label_map = {
+    "Qpos1A_Apos1A": "Qpos1A_Apos1A",
+    "Oneg1A_Opos1A": "Oneg1A_Opos1A",
+    "Oneg1A_Opos1B_retrieved": "Oneg1A_Opos1B",
+    "Oneg1A_Opos1B_bought_together": "Oneg1A_Opos1B",
+    "Oneg1A_Opos2A_restricted": "Oneg1A_Opos2A",
+    "Oneg1A_Opos2A_unrestricted": "Oneg1A_Opos2A",
+    "Opos1B_Opos1B2_only_agreement": "Opos1B_Opos1B2",
+    "Opos1B_Opos1B2_agreement_and_more": "Opos1B_Opos1B2",
+    "Opos1B_Opos2B": "Opos1B_Opos2B",
+    "Opos1B_Oneg2B": "Opos1B_Oneg2B"
+
+}
+
 with open("key.json","r") as f:
     token = json.load(f)
 

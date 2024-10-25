@@ -11,23 +11,21 @@ import pickle
 import pandas as pd
 import pprint
 
-from config import get_embedding_model, get_reader_model, conversation_mapping
+from config import get_embedding_model, get_reader_model, conversation_mapping, label_map
 
 
 prompt_in_chat_format = """
-Answer the question only based on the following context:
-Give a short answer and don't mention "based on the provided context"
+You are a helpful and knowledgeable sales agent assisting a customer. 
+Please provide a brief response based solely on the following context, 
+keeping the tone friendly and professional.
 
-Persona: You are a sales agent having a conversation with a customer
------
+Context:
+{detailed_information}
 
+Customer Question:
+{question}
 
-detailed_information/context: {detailed_information}
-
----
-
-Answer the question based on the above detailed_information/context and persona: 
-Question: {question}
+Answer the question directly, without mentioning "based on the provided context."
 """
 
 # Comment this line when you dont have the vector database
@@ -39,20 +37,35 @@ vector_database = FAISS.load_local(
 
 
 def get_llm_response(question, llm, label="", aspect="", product_id=""):
+    
     detailed_information = ""
+  
     if label == "Qpos1A_Apos1A":
-        detailed_information = f"The answer should have positive polarity about aspect: {aspect} and about same product with product id: {product_id}"
+        detailed_information = f"The answer should highlight positive attributes of the product's {aspect} and reference the same product with ID: {product_id}."
     elif label == "Oneg1A_Opos1A":
-        detailed_information = f"The answer should have  positive polarity about aspect: {aspect} and about same product with product id: {product_id}"
+        detailed_information = f"The answer should focus on positive aspects of the product's {aspect} and reference the same product with ID: {product_id}."
     elif label == "Oneg1A_Opos1B":
-        detailed_information = f"The answer should have  positive polarity about aspect: {aspect} but with different from product with product id: {product_id}"
+        detailed_information = f"The answer should emphasize positive aspects of the {aspect}, referring to a different product from the one with ID: {product_id}."
+    elif label == "Oneg1A_Opos2A":
+        detailed_information = f"The answer should highlight positive aspects of a different aspect than {aspect}, focusing on the same product with ID: {product_id}."
+    elif label == "Opos1B_Opos2B":
+        detailed_information = f"The answer should mention positive aspects of a different attribute from {aspect}, referencing the same product with ID: {product_id}."
+    elif label == "Opos1B_Opos1B2":
+        detailed_information = f"The answer should provide positive information about {aspect}, focusing on the same product with ID: {product_id}."
+    elif label == "Opos1B_Oneg2B":
+        detailed_information = f"The answer should describe negative aspects of a different attribute than {aspect}, focusing on the same product with ID: {product_id}."
+
+
 
     final_prompt = prompt_in_chat_format.format(
         question=question, detailed_information=detailed_information
     )
 
+    pprint.pprint(final_prompt)
     # Generate the answer using the large language model
     answer = llm(final_prompt)[0]["generated_text"]
+    pprint.pprint(answer)
+
     return answer
 
 
@@ -175,6 +188,9 @@ def get_our_rag_response(
 
     #print("1:", relevant_docs)
     # Post-filtering to apply $ne condition on reviewId
+
+    #NOTE: This filter applies to all labels.
+    #Thats why we dont have any seperate if condition for Opos1B_Opos1B2 label.
     filtered_docs = [
         doc for doc in relevant_docs if doc.metadata["reviewId"] != review_id
     ]
@@ -240,10 +256,10 @@ if __name__ == "__main__":
         writer.writeheader()
 
         
-        for item in blocks_neg_100:
-        #for i in range(0, len(blocks_neg_100), 100):
-            #item = blocks_neg_100[i]
-            
+        #for item in blocks_neg_100:
+        for i in range(0, len(blocks_neg_100), 100):
+            item = blocks_neg_100[i]
+            print("\n\n")
             # Extract information
             question = item["question"]
             product_id = item["product_id"]
@@ -252,9 +268,11 @@ if __name__ == "__main__":
             answer = item["answer"]
             review_id = item["review_id"]
             # bought_together = item["bought_together"]
-
+            print("Label: ",label)
+            label = label_map[label]
+            print("Label: ",label)
             # Save OpinionConv Response
-            print("# save OpinionConv Response")
+            #print("# save OpinionConv Response")
             opinion_conv_response = answer
 
             # Save llm response
@@ -262,25 +280,25 @@ if __name__ == "__main__":
             llm_response = get_llm_response(
                 question, get_reader_model(), label, aspect, product_id
             )
-
+            print("\n\n")
             # Save vanilla rag response
-            print("save vanilla rag response")
-            vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(
-                question, get_reader_model()
-            )
-
+            #print("save vanilla rag response")
+            # vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(
+            #     question, get_reader_model()
+            # )
+            #print("\n\n")
             # #Save our rag response
-            print("save our rag response")
-            our_rag_response, our_rag_prompt, relevant_doc = get_our_rag_response(
-                question,
-                label,
-                aspect,
-                product_id,
-                review_id,
-                answer,
-                get_reader_model(),
-                bought_together=[],
-            )
+            #print("save our rag response")
+            # our_rag_response, our_rag_prompt, relevant_doc = get_our_rag_response(
+            #     question,
+            #     label,
+            #     aspect,
+            #     product_id,
+            #     review_id,
+            #     answer,
+            #     get_reader_model(),
+            #     bought_together=[],
+            # )
 
             # Write in csv
             writer.writerow(
@@ -288,15 +306,15 @@ if __name__ == "__main__":
                     "query": question,
                     "opinion_conv_response": opinion_conv_response,
                     "llm_response": llm_response,
-                    "vanilla_rag_response": vanilla_rag_response,
-                    "vanilla_rag_prompt": vanilla_rag_prompt,
-                    "our_rag_response": our_rag_response,
-                    "our_rag_prompt": our_rag_prompt,
-                    "label": label,
-                    "our_relevant_doc": relevant_doc,
+                    #"vanilla_rag_response": vanilla_rag_response,
+                    #"vanilla_rag_prompt": vanilla_rag_prompt,
+                    #"our_rag_response": our_rag_response,
+                    #"our_rag_prompt": our_rag_prompt,
+                    #"label": label,
+                    #"our_relevant_doc": relevant_doc,
                 }
             )
 
             # counter+=1
-            # if counter>2:
+            # if counter>3:
             #     break
