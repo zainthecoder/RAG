@@ -16,6 +16,9 @@ import torch
 import pprint
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
+access_token = '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'
+model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+
 conversation_mapping = {
     "Qpos1A_Apos1A": "Positive",
     "Oneg1A_Opos1A": "Positive",
@@ -39,10 +42,6 @@ label_map = {
 
 }
 
-with open("key.json","r") as f:
-    token = json.load(f)
-
-access_token = token["token"]
 model_singleton = {}
 
 def get_embedding_model():

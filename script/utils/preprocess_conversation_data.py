@@ -3,7 +3,7 @@ import json
 from nanoid import generate
 import pickle
 import pprint
-
+import ipdb
 
 def extract_question_answer_pairs(data_stream):
     qa_pairs = []
@@ -13,6 +13,7 @@ def extract_question_answer_pairs(data_stream):
         # print("product_data")
         # pprint.pprint(product_data)
         for product_key, product_data in data.items():
+            ipdb.set_trace()
             print("product_key:", product_key)
             # Assuming product_data is a dictionary for each product
             for conv_type, conv_type_data in product_data.items():
