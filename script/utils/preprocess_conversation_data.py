@@ -5,6 +5,7 @@ import pickle
 import pprint
 import ipdb
 
+
 def extract_question_answer_pairs(data_stream):
     qa_pairs = []
     unique_ids = set()
@@ -13,7 +14,6 @@ def extract_question_answer_pairs(data_stream):
         # print("product_data")
         # pprint.pprint(product_data)
         for product_key, product_data in data.items():
-            ipdb.set_trace()
             print("product_key:", product_key)
             # Assuming product_data is a dictionary for each product
             for conv_type, conv_type_data in product_data.items():
@@ -37,27 +37,27 @@ def extract_question_answer_pairs(data_stream):
                                 polarity = value["Labels"]["Polarity"]
                                 review_id = value["Labels"]["Key"]
                                 unique_ids.add(product_id)
-                    if question and answer:
-                        unique_id = generate(size=10)
-                        qa_pairs.append(
-                            {
-                                "unique_id": unique_id,
-                                "product_id": product_id,
-                                "question": question,
-                                "answer": answer,
-                                "label": "Qpos1A_Apos1A",
-                                "aspect": aspect,
-                                "polarity": polarity,
-                                "review_id": review_id,
-                            }
-                        )
+                        if question and answer:
+                            unique_id = generate(size=10)
+                            qa_pairs.append(
+                                {
+                                    "unique_id": unique_id,
+                                    "product_id": product_id,
+                                    "question": question,
+                                    "answer": answer,
+                                    "label": "Qpos1A_Apos1A",
+                                    "aspect": aspect,
+                                    "polarity": polarity,
+                                    "review_id": review_id,
+                                }
+                            )
                 else:
-                    counter = 0
                     for pair_key, pair_data in conv_type_data.items():
-                        if counter == 0:
-                            print("pair_key:   ", pair_key)
-                            print("pair_data", pair_data)
-                            for key, value in pair_data.items():
+                        question_flag = True
+                        print("pair_key:   ", pair_key)
+                        print("pair_data", pair_data)
+                        for key, value in pair_data.items():
+                            if question_flag:
                                 question = value["Opinion"]
                                 product_id = value["Labels"]["Key"].split("_")[0]
                                 aspect = value["Labels"]["Aspect"]
@@ -68,30 +68,29 @@ def extract_question_answer_pairs(data_stream):
                                 else:
                                     bought_together = []
                                 unique_ids.add(product_id)
-                        elif counter == 1:
-                            for key, value in pair_data.items():
+                                question_flag = False
+                            elif question_flag == False:
                                 answer = value["Opinion"]
                                 product_id = value["Labels"]["Key"].split("_")[0]
                                 aspect = value["Labels"]["Aspect"]
                                 polarity = value["Labels"]["Polarity"]
                                 review_id = value["Labels"]["Key"]
                                 unique_ids.add(product_id)
-                        counter += 1
 
-                    if question and answer:
-                        unique_id = generate(size=10)
-                        qa_pairs.append(
-                            {
-                                "unique_id": unique_id,
-                                "product_id": product_id,
-                                "question": question,
-                                "answer": answer,
-                                "label": conv_type,
-                                "aspect": aspect,
-                                "polarity": polarity,
-                                "review_id": review_id,
-                            }
-                        )
+                        if question and answer:
+                            unique_id = generate(size=10)
+                            qa_pairs.append(
+                                {
+                                    "unique_id": unique_id,
+                                    "product_id": product_id,
+                                    "question": question,
+                                    "answer": answer,
+                                    "label": conv_type,
+                                    "aspect": aspect,
+                                    "polarity": polarity,
+                                    "review_id": review_id,
+                                }
+                            )
 
     return qa_pairs, unique_ids
 
