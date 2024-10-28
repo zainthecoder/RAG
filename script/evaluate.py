@@ -1,8 +1,42 @@
 # Imports
-from config import get_reader_model, get_tokenizer
+from config import model_name, access_token
 import csv
 import pprint
 from tqdm import tqdm
+import json
+import torch
+
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig,
+)
+
+
+access_token = access_token
+tokenizer = AutoTokenizer.from_pretrained(
+    model_name, token=access_token, trust_remote_code=True
+)
+
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_use_double_quant=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+)
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    token=access_token,
+    device_map={"": 0},
+    quantization_config=bnb_config,
+    torch_dtype="auto",
+    trust_remote_code=True,
+)
+
+model.config.use_cache = False
+model.config.pretraining_tp = 1
 
 # Load the CSV data
 data = []
@@ -31,21 +65,24 @@ def prompt_creation(
         {
             "role": "user",
             "content": f"""
-    You are a brilliant salesperson. Analyze and choose the best option for the following customer query:
+            You are a helpful and knowledgeable sales agent assisting a customer. Analyze and choose the best option for the following customer query:
+            """,
+        },
+        {
+            "role": "user",
+            "content": f"""
+            Customer question: {question}
 
-    Customer question: {question}
+            Options
+            Option 1: {response1}
+            Option 2: {response2}
+            Option 3: {response3}
+            Option 4: {response4}
 
-    Options
-    Option 1: {response1}
-    Option 2: {response2}
-    Option 3: {response3}
-    Option 4: {response4}
-
-    Ensure the final answer is clearly indicated by ending with {"The final answer is"}.
-    """,
-        }
+            Ensure the final answer is clearly indicated by ending with {"The final answer is"}.
+            """,
+        },
     ]
-
     return messages
 
 

@@ -68,35 +68,15 @@ vector_database = FAISS.load_local(
 )
 
 
-def get_llm_response(question, label="", aspect="", product_id=""):
-
-    detailed_information = ""
-
-    if label == "Qpos1A_Apos1A":
-        detailed_information = f"The answer should highlight positive attributes of the product's {aspect} and reference the same product with ID: {product_id}."
-    elif label == "Oneg1A_Opos1A":
-        detailed_information = f"The answer should focus on positive aspects of the product's {aspect} and reference the same product with ID: {product_id}."
-    elif label == "Oneg1A_Opos1B":
-        detailed_information = f"The answer should emphasize positive aspects of the {aspect}, referring to a different product from the one with ID: {product_id}."
-    elif label == "Oneg1A_Opos2A":
-        detailed_information = f"The answer should highlight positive aspects of a different aspect than {aspect}, focusing on the same product with ID: {product_id}."
-    elif label == "Opos1B_Opos2B":
-        detailed_information = f"The answer should mention positive aspects of a different attribute from {aspect}, referencing the same product with ID: {product_id}."
-    elif label == "Opos1B_Opos1B2":
-        detailed_information = f"The answer should provide positive information about {aspect}, focusing on the same product with ID: {product_id}."
-    elif label == "Opos1B_Oneg2B":
-        detailed_information = f"The answer should describe negative aspects of a different attribute than {aspect}, focusing on the same product with ID: {product_id}."
-
+def get_llm_response(question):
 
     messages = [
         {
             "role": "system",
             "content": f"""
             You are a helpful and knowledgeable sales agent assisting a customer. 
-            Please provide a brief response based solely on the following context, 
+            Please provide a brief response, 
             keeping the tone friendly and professional.
-
-            Context:{detailed_information} 
             """,
         },
         {
@@ -104,7 +84,7 @@ def get_llm_response(question, label="", aspect="", product_id=""):
             "content": f"""
             Customer Question:
             {question}
-            Answer the question directly, without mentioning "based on the provided context."
+            Answer the question directly"
         """,
         },
     ]
@@ -256,6 +236,23 @@ def get_our_rag_response(
     if filtered_docs:
         relevant_doc = filtered_docs[0]
 
+        detailed_information = ""
+
+        if label == "Qpos1A_Apos1A":
+            detailed_information = f"The answer should highlight positive attributes of the product's {aspect} and reference the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+        elif label == "Oneg1A_Opos1A":
+            detailed_information = f"The answer should focus on positive aspects of the product's {aspect} and reference the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+        elif label == "Oneg1A_Opos1B":
+            detailed_information = f"The answer should emphasize positive aspects of the {aspect}, referring to a different product from the one with ID: {product_id}. Example: {relevant_doc.page_content}"
+        elif label == "Oneg1A_Opos2A":
+            detailed_information = f"The answer should highlight positive aspects of a different aspect than {aspect}, focusing on the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+        elif label == "Opos1B_Opos2B":
+            detailed_information = f"The answer should mention positive aspects of a different attribute from {aspect}, referencing the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+        elif label == "Opos1B_Opos1B2":
+            detailed_information = f"The answer should provide positive information about {aspect}, focusing on the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+        elif label == "Opos1B_Oneg2B":
+            detailed_information = f"The answer should describe negative aspects of a different attribute than {aspect}, focusing on the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+
         messages = [
             {
                 "role": "system",
@@ -264,7 +261,7 @@ def get_our_rag_response(
                 Please provide a brief response based solely on the following context, 
                 keeping the tone friendly and professional.
 
-                Context:{relevant_doc.page_content} 
+                Context:{detailed_information} 
                 """,
             },
             {
@@ -286,9 +283,10 @@ def get_our_rag_response(
 
         print("\nResonse from our rag response")
         pprint.pprint(generated_data)
+        answer = generated_data
 
-        return answer, messages, generated_data
-    return answer, messages, generated_data
+        return answer
+    return answer
 
 if __name__ == "__main__":
     # Load pickled data
@@ -307,19 +305,19 @@ if __name__ == "__main__":
             "query",
             "opinion_conv_response",
             "llm_response",
-            "vanilla_rag_response",
-            "vanilla_rag_prompt",
+            #"vanilla_rag_response",
+            #"vanilla_rag_prompt",
             "our_rag_response",
-            "our_rag_prompt",
+            #"our_rag_prompt",
             "label",
-            "our_relevant_doc",
+            #"our_relevant_doc",
         ]
         writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
         writer.writeheader()
 
-        # for item in blocks_neg_100:
-        for i in range(0, len(blocks_neg_100), 100):
-            item = blocks_neg_100[i]
+        for item in blocks_neg_100:
+        #for i in range(0, len(blocks_neg_100), 2000):
+            #item = blocks_neg_100[i]
             print("\n\n")
             # Extract information
             question = item["question"]
@@ -336,9 +334,15 @@ if __name__ == "__main__":
             # print("# save OpinionConv Response")
             opinion_conv_response = answer
 
+            
+            
+            print("Label: ",label)
+            label = label_map[label]
+            print("Label: ",label)
+
             # Save llm response
             print("save llm response")
-            llm_response = get_llm_response(question, label, aspect, product_id)
+            llm_response = get_llm_response(question)
             print("\n\n")
             # Save vanilla rag response
             # print("save vanilla rag response")
@@ -348,7 +352,7 @@ if __name__ == "__main__":
             print("\n\n")
             #Save our rag response
             print("save our rag response")
-            our_rag_response, our_rag_prompt, relevant_doc = get_our_rag_response(
+            our_rag_response = get_our_rag_response(
                 question,
                 label,
                 aspect,
@@ -367,7 +371,7 @@ if __name__ == "__main__":
                     # "vanilla_rag_response": vanilla_rag_response,
                     # "vanilla_rag_prompt": vanilla_rag_prompt,
                     "our_rag_response": our_rag_response,
-                    "our_rag_prompt": our_rag_prompt,
+                    #"our_rag_prompt": our_rag_prompt,
                     "label": label,
                     # "our_relevant_doc": relevant_doc,
                 }
