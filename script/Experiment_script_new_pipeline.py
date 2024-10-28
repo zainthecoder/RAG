@@ -18,47 +18,11 @@ from transformers import (
     AutoModelForCausalLM,
     BitsAndBytesConfig,
 )
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
-from config import access_token, label_map, get_embedding_model, model_name
+from config import access_token, label_map, model_name, get_tokenizer, get_embedding_model, get_reader_model
 
 access_token = access_token
-tokenizer = AutoTokenizer.from_pretrained(
-    model_name, token=access_token, trust_remote_code=True
-)
-
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16,
-)
-
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    token=access_token,
-    device_map={"": 0},
-    quantization_config=bnb_config,
-    torch_dtype="auto",
-    trust_remote_code=True,
-)
-
-model.config.use_cache = False
-model.config.pretraining_tp = 1
-
-prompt_in_chat_format = """
-You are a helpful and knowledgeable sales agent assisting a customer. 
-Please provide a brief response based solely on the following context, 
-keeping the tone friendly and professional.
-
-Context:
-{detailed_information}
-
-Customer Question:
-{question}
-
-Answer the question directly, without mentioning "based on the provided context."
-"""
 
 # Comment this line when you dont have the vector database
 vector_database = FAISS.load_local(
@@ -68,15 +32,31 @@ vector_database = FAISS.load_local(
 )
 
 
-def get_llm_response(question):
+#Want to create a map where i can just pick the product name from the product id
+from datasets import load_dataset
+
+# Load the dataset
+df_metaData_raw_cellPhones = load_dataset(
+    "McAuley-Lab/Amazon-Reviews-2023",
+    "raw_meta_Cell_Phones_and_Accessories",
+    split="full",
+    trust_remote_code=True,
+)
+
+# Create a dictionary mapping title to parent_asin
+parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+
+# Now you can use title_to_parent_asin to replace title with parent_asin in your code
+
+
+def get_llm_response(question, product_name, model, tokenizer):
 
     messages = [
         {
             "role": "system",
             "content": f"""
             You are a helpful and knowledgeable sales agent assisting a customer. 
-            Please provide a brief response, 
-            keeping the tone friendly and professional.
+            Please provide a brief response for the following question related to this product: {product_name} 
             """,
         },
         {
@@ -151,7 +131,7 @@ def create_vector_database():
     print("vectore db creatton done")
 
 
-def get_vanilla_rag_response(question, llm):
+def get_vanilla_rag_response(question, product_name, model, tokenizer):
 
     # create vector database
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
@@ -163,18 +143,59 @@ def get_vanilla_rag_response(question, llm):
     pprint.pprint(relevant_doc)
 
     relevant_doc = relevant_doc[0]
-    relevant_page_content = relevant_doc.page_content
-    final_prompt = prompt_in_chat_format.format(
-        question=question, detailed_information=relevant_doc
-    )
 
-    # Generate the answer using the large language model
-    answer = llm(final_prompt)[0]["generated_text"]
-    return answer, final_prompt
+    detailed_information = ""
 
+    if label == "Qpos1A_Apos1A":
+        detailed_information = f"The answer should focus on following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+    elif label == "Oneg1A_Opos1A":
+        detailed_information = f"The answer should focus on following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+    elif label == "Oneg1A_Opos1B":
+        detailed_information = f"The answer should focus on a different product from the one with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+    elif label == "Oneg1A_Opos2A":
+        detailed_information = f"The answer should focus on the following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+    elif label == "Opos1B_Opos2B":
+        detailed_information = f"The answer should focus on following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+    elif label == "Opos1B_Opos1B2":
+        detailed_information = f"The answer should focus on a different product from the one with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+    elif label == "Opos1B_Oneg2B":
+        detailed_information = f"The answer should focus on following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
+
+    messages = [
+        {
+            "role": "system",
+            "content": f"""
+            You are a helpful and knowledgeable sales agent assisting a customer. 
+            Please provide a brief response based solely on the following context
+
+            Context:{detailed_information} 
+            """,
+        },
+        {
+            "role": "user",
+            "content": f"""
+            Customer Question:
+            {question}
+            Answer the question directly, without mentioning "based on the provided context."
+        """
+        }
+    ]
+
+    model_inputs = tokenizer.apply_chat_template(messages, return_tensors="pt").to(
+            "cuda"
+        )
+
+    generated_ids = model.generate(model_inputs, max_new_tokens=1000, do_sample=True)
+    generated_data = tokenizer.batch_decode(generated_ids)[0]
+
+    print("\nResonse from our rag response")
+    pprint.pprint(generated_data)
+    answer = generated_data
+
+    return answer
 
 def get_our_rag_response(
-    question, label, aspect, product_id, review_id, answer, bought_together=[]
+    question, label, aspect, product_id, review_id, answer, product_name, model, tokenizer
 ):
     # Create vector database if not exists
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
@@ -196,15 +217,12 @@ def get_our_rag_response(
         fetch_k=96206,  # Number of results to fetch before filtering
     )
 
-    #print("relevant_docs after similarity_search search :",relevant_docs)
-
     # NOTE: This filter applies to all labels.
     # Thats why we dont have any seperate if condition for Opos1B_Opos1B2 label.
     filtered_docs = [
         doc for doc in relevant_docs if doc.metadata["reviewId"] != review_id
     ]
-    # print("review_id: ",review_id)
-    # print("2:", filtered_docs)
+
     if label == "Oneg1A_Opos2A" or label == "Opos1B_Opos2B" or label == "Opos1B_Oneg2B":
         filtered_docs = [
             doc for doc in relevant_docs if doc.metadata["aspect"] != aspect
@@ -213,9 +231,7 @@ def get_our_rag_response(
         filtered_docs = [
             doc for doc in relevant_docs if doc.metadata["aspect"] == aspect
         ]
-
-    # print("aspect: ",aspect)
-    # print("3:", filtered_docs)
+   
     if label == "Oneg1A_Opos1B":
         filtered_docs = [
             doc for doc in relevant_docs if doc.metadata["productId"] != product_id
@@ -225,8 +241,6 @@ def get_our_rag_response(
             doc for doc in relevant_docs if doc.metadata["productId"] == product_id
         ]
 
-    # print("productId: ",product_id)
-    # print("filtered_docs after all filtering: ",filtered_docs)
     # Generate the response using LLM
     answer = ""
     final_prompt = ""
@@ -239,27 +253,26 @@ def get_our_rag_response(
         detailed_information = ""
 
         if label == "Qpos1A_Apos1A":
-            detailed_information = f"The answer should highlight positive attributes of the product's {aspect} and reference the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should focus on positive aspects of the {aspect} of the following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
         elif label == "Oneg1A_Opos1A":
-            detailed_information = f"The answer should focus on positive aspects of the product's {aspect} and reference the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should focus on positive aspects of the {aspect} of the following product: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
         elif label == "Oneg1A_Opos1B":
-            detailed_information = f"The answer should emphasize positive aspects of the {aspect}, referring to a different product from the one with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should focus on positive aspects of the {aspect}, referring to a different product from the one with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
         elif label == "Oneg1A_Opos2A":
-            detailed_information = f"The answer should highlight positive aspects of a different aspect than {aspect}, focusing on the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should mention positive aspects of a different attribute from {aspect}, referencing the same product with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
         elif label == "Opos1B_Opos2B":
-            detailed_information = f"The answer should mention positive aspects of a different attribute from {aspect}, referencing the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should mention positive aspects of a different attribute from {aspect}, referencing the same product with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
         elif label == "Opos1B_Opos1B2":
-            detailed_information = f"The answer should provide positive information about {aspect}, focusing on the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should focus on positive aspects of the {aspect}, referring to a different product from the one with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
         elif label == "Opos1B_Oneg2B":
-            detailed_information = f"The answer should describe negative aspects of a different attribute than {aspect}, focusing on the same product with ID: {product_id}. Example: {relevant_doc.page_content}"
+            detailed_information = f"The answer should describe negative aspects of a different attribute than {aspect}, focusing on the same product with name: {product_name}. Answer the question using the following review for this product: {relevant_doc.page_content}"
 
         messages = [
             {
                 "role": "system",
                 "content": f"""
                 You are a helpful and knowledgeable sales agent assisting a customer. 
-                Please provide a brief response based solely on the following context, 
-                keeping the tone friendly and professional.
+                Please provide a brief response based solely on the following context
 
                 Context:{detailed_information} 
                 """,
@@ -305,12 +318,9 @@ if __name__ == "__main__":
             "query",
             "opinion_conv_response",
             "llm_response",
-            #"vanilla_rag_response",
-            #"vanilla_rag_prompt",
+            "vanilla_rag_response",
             "our_rag_response",
-            #"our_rag_prompt",
             "label",
-            #"our_relevant_doc",
         ]
         writer = csv.DictWriter(output_file_path, fieldnames=fieldnames)
         writer.writeheader()
@@ -340,15 +350,19 @@ if __name__ == "__main__":
             label = label_map[label]
             print("Label: ",label)
 
+            product_name = parent_asin_to_title[product_id]
+
             # Save llm response
             print("save llm response")
-            llm_response = get_llm_response(question)
+            llm_response = get_llm_response(question, product_name, get_reader_model(), get_tokenizer())
+            
             print("\n\n")
-            # Save vanilla rag response
-            # print("save vanilla rag response")
-            # vanilla_rag_response, vanilla_rag_prompt = get_vanilla_rag_response(
-            #     question, get_reader_model()
-            # )
+            #Save vanilla rag response
+            print("save vanilla rag response")
+            vanilla_rag_response  = get_vanilla_rag_response(
+                question, product_name, get_reader_model(), get_tokenizer()
+            )
+            
             print("\n\n")
             #Save our rag response
             print("save our rag response")
@@ -359,7 +373,9 @@ if __name__ == "__main__":
                 product_id,
                 review_id,
                 answer,
-                bought_together=[],
+                product_name,
+                get_reader_model(),
+                get_tokenizer()
             )
 
             # Write in csv
@@ -368,12 +384,9 @@ if __name__ == "__main__":
                     "query": question,
                     "opinion_conv_response": opinion_conv_response,
                     "llm_response": llm_response,
-                    # "vanilla_rag_response": vanilla_rag_response,
-                    # "vanilla_rag_prompt": vanilla_rag_prompt,
+                    "vanilla_rag_response": vanilla_rag_response,
                     "our_rag_response": our_rag_response,
-                    #"our_rag_prompt": our_rag_prompt,
                     "label": label,
-                    # "our_relevant_doc": relevant_doc,
                 }
             )
 

@@ -64,21 +64,14 @@ def get_reader_model():
             bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=torch.bfloat16,
         )
-        model = AutoModelForCausalLM.from_pretrained(
-            READER_MODEL_NAME, token=access_token,quantization_config=bnb_config, device_map="auto"
-        )
-        model.config.use_cache = False
-        model.config.pretraining_tp = 1
-        tokenizer = AutoTokenizer.from_pretrained(READER_MODEL_NAME,token=access_token, device_map="auto")
-        model_singleton['reader_model'] = pipeline(
-            model=model,
-            tokenizer=tokenizer,
-            task="text-generation",
-            do_sample=True,
-            temperature=0.2,
-            repetition_penalty=1.1,
-            return_full_text=False,
-            max_new_tokens=500,
+        
+        model_singleton['reader_model'] = AutoModelForCausalLM.from_pretrained(
+            READER_MODEL_NAME,
+            token=access_token,
+            device_map={"": 0},
+            quantization_config=bnb_config,
+            torch_dtype="auto",
+            trust_remote_code=True,
         )
     return model_singleton['reader_model']
 
