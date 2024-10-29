@@ -77,6 +77,6 @@ def get_reader_model():
 
 def get_tokenizer():
     if 'tokenizer' not in model_singleton:
-        READER_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+        READER_MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
         model_singleton['tokenizer'] = AutoTokenizer.from_pretrained(READER_MODEL_NAME, token=access_token,device_map="auto")
     return model_singleton['tokenizer']
