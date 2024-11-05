@@ -56,7 +56,7 @@ def get_llm_response(question, product_name, model, tokenizer):
             "role": "system",
             "content": f"""
             You are a helpful and knowledgeable sales agent assisting a customer. 
-            Please provide a brief response for the following question related to this product: {product_name} 
+            Please provide a brief response to the following question related to this product: {product_name} 
             """,
         },
         {
@@ -141,6 +141,10 @@ def get_vanilla_rag_response(question, product_name, model, tokenizer):
 
     pprint.pprint("Relevant Doc in vanilla:")
     pprint.pprint(relevant_doc)
+
+
+    #TODO: do we need the unique review filter
+
 
     relevant_doc = relevant_doc[0]
 

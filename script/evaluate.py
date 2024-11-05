@@ -3,55 +3,23 @@ from config import model_name, access_token
 import csv
 import pprint
 from tqdm import tqdm
-import json
-import torch
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    BitsAndBytesConfig,
-)
-
-
-access_token = access_token
-tokenizer = AutoTokenizer.from_pretrained(
-    model_name, token=access_token, trust_remote_code=True
-)
-
-
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.bfloat16,
-)
-
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    token=access_token,
-    device_map={"": 0},
-    quantization_config=bnb_config,
-    torch_dtype="auto",
-    trust_remote_code=True,
-)
-
-model.config.use_cache = False
-model.config.pretraining_tp = 1
+from config import access_token, label_map, model_name, get_tokenizer, get_embedding_model, get_reader_model
 
 # Load the CSV data
 data = []
 with open("output_file_path.csv", newline="", encoding="utf-8") as csvfile:
-    reader = csv.DictReader(csvfile)  # Assuming the CSV has headers
+    reader = csv.DictReader(csvfile)
     for row in reader:
         data.append(row)
 
 
 # Define a function to get the LLM response
-def get_llm_response(messages):
+def get_llm_response(messages, tokenizer, model):
+    
     model_inputs = tokenizer.apply_chat_template(messages, return_tensors="pt").to(
         "cuda"
     )
-
     generated_ids = model.generate(model_inputs, max_new_tokens=1000, do_sample=True)
     generated_data = tokenizer.batch_decode(generated_ids)[0]
 
@@ -64,6 +32,7 @@ def prompt_creation(
     question,
     response1,
     response2,
+    response3,
     response4,
 ):
 
@@ -82,7 +51,8 @@ def prompt_creation(
             Options
             Option 1: {response1}
             Option 2: {response2}
-            Option 3: {response4}
+            Option 3: {response3}
+            Option 4: {response4}
 
             Ensure the final answer is clearly indicated by ending with {"The final answer is"}.
             """,
@@ -98,18 +68,21 @@ with open("evaluation_file.csv", "w", newline="", encoding="utf-8") as output_fi
         "llm evaluation response",
         "opinion_conv_response",
         "llm_response",
-        #"vanilla_rag_response",
+        "vanilla_rag_response",
         "our_rag_response",
     ]
 
     writer = csv.DictWriter(output_file, fieldnames=fieldnames)
     writer.writeheader()  # Write the header row
 
-    for item in tqdm(data, desc="Processing Queries"):
+    #for item in tqdm(data, desc="Processing Queries"):
+    for i in range(0, len(data), 50):
+        item = data[i]
+ 
         question = item["query"]  # Assuming these keys match the CSV headers
         response1 = item["opinion_conv_response"]
         response2 = item["llm_response"]
-        #response3 = item["vanilla_rag_response"]
+        response3 = item["vanilla_rag_response"]
         response4 = item.get("our_rag_response", "")
 
         # Format the prompt
@@ -117,13 +90,13 @@ with open("evaluation_file.csv", "w", newline="", encoding="utf-8") as output_fi
             question=question,
             response1=response1,
             response2=response2,
-            #response3=response3,
+            response3=response3,
             response4=response4,
         )
 
         # Get the LLM response
         llm_response = get_llm_response(
-            final_prompt
+            final_prompt, get_tokenizer(), get_reader_model()
         )
 
         print("\n\nNew Question\n")
@@ -137,7 +110,7 @@ with open("evaluation_file.csv", "w", newline="", encoding="utf-8") as output_fi
                 "llm evaluation response": llm_response,
                 "opinion_conv_response": response1,
                 "llm_response": response2,
-               # "vanilla_rag_response": response3,
+                "vanilla_rag_response": response3,
                 "our_rag_response": response4,
             }
         )
