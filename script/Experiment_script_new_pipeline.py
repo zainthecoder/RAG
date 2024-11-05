@@ -10,44 +10,10 @@ from collections import OrderedDict
 import os
 import csv
 import pickle
-import pandas as pd
 import pprint
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    BitsAndBytesConfig,
-)
-from langchain_community.embeddings import HuggingFaceEmbeddings
-
-from config import access_token, label_map, model_name, get_tokenizer, get_embedding_model, get_reader_model
-
-access_token = access_token
-
-# Comment this line when you dont have the vector database
-vector_database = FAISS.load_local(
-    "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index",
-    get_embedding_model(),
-    allow_dangerous_deserialization=True,
-)
-
-
-#Want to create a map where i can just pick the product name from the product id
+from config import label_map, get_tokenizer, get_embedding_model, get_reader_model
 from datasets import load_dataset
-
-# Load the dataset
-df_metaData_raw_cellPhones = load_dataset(
-    "McAuley-Lab/Amazon-Reviews-2023",
-    "raw_meta_Cell_Phones_and_Accessories",
-    split="full",
-    trust_remote_code=True,
-)
-
-# Create a dictionary mapping title to parent_asin
-parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
-
-# Now you can use title_to_parent_asin to replace title with parent_asin in your code
-
 
 def get_llm_response(question, product_name, model, tokenizer):
 
@@ -131,7 +97,7 @@ def create_vector_database():
     print("vectore db creatton done")
 
 
-def get_vanilla_rag_response(question, product_name, model, tokenizer):
+def get_vanilla_rag_response(question, product_name, model, tokenizer, vector_database):
 
     # create vector database
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
@@ -199,7 +165,7 @@ def get_vanilla_rag_response(question, product_name, model, tokenizer):
     return answer
 
 def get_our_rag_response(
-    question, label, aspect, product_id, review_id, answer, product_name, model, tokenizer
+    question, label, aspect, product_id, review_id, answer, product_name, model, tokenizer, vector_database
 ):
     # Create vector database if not exists
     if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
@@ -305,7 +271,33 @@ def get_our_rag_response(
         return answer
     return answer
 
+
+
+
+# Load dataset once and pass it as an argument to relevant functions
+def load_metadata_dataset():
+    return load_dataset(
+        "McAuley-Lab/Amazon-Reviews-2023",
+        "raw_meta_Cell_Phones_and_Accessories",
+        split="full",
+        trust_remote_code=True,
+    )
+
 if __name__ == "__main__":
+    print("Hi")
+    # Load metadata dataset once here
+    df_metaData_raw_cellPhones = load_metadata_dataset()
+    parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+
+
+    vector_database = FAISS.load_local(
+        "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index",
+        get_embedding_model(),
+        allow_dangerous_deserialization=True,
+    )
+
+
+
     # Load pickled data
     with open(
         "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", "rb"
@@ -313,7 +305,7 @@ if __name__ == "__main__":
         blocks_neg_100 = pickle.load(f)
 
     counter = 0
-
+    print("wassup")
     # Writing to CSV file
     with open(
         "output_file_path.csv", "w", newline="", encoding="utf-8"
@@ -364,7 +356,7 @@ if __name__ == "__main__":
             #Save vanilla rag response
             print("save vanilla rag response")
             vanilla_rag_response  = get_vanilla_rag_response(
-                question, product_name, get_reader_model(), get_tokenizer()
+                question, product_name, get_reader_model(), get_tokenizer(), vector_database
             )
             
             print("\n\n")
@@ -379,7 +371,8 @@ if __name__ == "__main__":
                 answer,
                 product_name,
                 get_reader_model(),
-                get_tokenizer()
+                get_tokenizer(),
+                vector_database
             )
 
             # Write in csv
