@@ -46,11 +46,11 @@ def prompt_creation(question, response1, response2, response3, response4):
             Please review each response in depth based on specific criteria and assign a score between 1 and 5 for each criterion.
 
             **Evaluation Criteria**:
-            1. **Realism**: Assess how conversational and natural the response feels. A high score (5) should indicate that the response sounds like a genuine, fluent conversation between two people, while a low score (1) means the response sounds robotic, stiff, or overly scripted.
-            2. **Relevance**: Check if the response directly addresses the customer’s question. A high score (5) means the response is completely aligned with the customer's needs and question, whereas a low score (1) means it misses the point or includes off-topic information.
-            3. **Conciseness**: Evaluate if the information is conveyed clearly and without unnecessary detail. A high score (5) reflects a response that is brief yet informative, while a low score (1) indicates the response is verbose or contains irrelevant details.
-            4. **Persuasiveness**: Judge how effectively the response aids the customer’s decision-making process. A high score (5) should mean the response is compelling, with clear and persuasive language, while a low score (1) means the response lacks any motivating or guiding elements.
-            5. **Subjectiveness**: Determine if the response expresses any subjective opinion or bias. This criterion should capture whether the response gives a personalized or opinion-based perspective (higher score), or remains neutral and strictly factual (lower score). Assign a high score (5) if it includes subjective expressions, and a low score (1) if it is entirely objective.
+            1. **Realism**:Assess how natural, personable, and engaging the sales agent's response feels. A high score (5) should indicate that the response sounds like a skilled salesperson genuinely interacting with the customer, building rapport, and showing empathy. A low score (1) indicates a response that feels artificial, overly rehearsed, or detached.
+            2. **Relevance**: Check if the sales agent’s response directly addresses the customer’s needs, preferences, or concerns expressed in their question. A high score (5) means the response is precisely tailored to the customer's situation, demonstrating a deep understanding of their requirements. A low score (1) means the response is off-topic or does not align with the customer's expressed interests.
+            3. **Conciseness**: Evaluate if the response provides the necessary information effectively without overwhelming the customer with excessive details. A high score (5) indicates the agent conveys key points clearly and efficiently, maintaining the customer’s attention. A low score (1) reflects a response that is too verbose or includes unnecessary or irrelevant information.
+            4. **Persuasiveness**: Judge how effectively the response motivates the customer to consider or purchase the product/service. A high score (5) should indicate the use of persuasive language, compelling value propositions, and addressing objections skillfully. A low score (1) means the response lacks impact, fails to highlight benefits, or does not encourage action.
+            5. **Subjectiveness**: Assess whether the response includes a personalized or emotionally engaging approach, such as sharing opinions, testimonials, or tailored recommendations. A high score (5) reflects a response that feels individualized and expressive, whereas a low score (1) indicates the response is entirely factual, generic, or devoid of personal touch.
 
             **Evaluation Process**:
             1. For each option, provide individual scores for the criteria listed above.
@@ -109,9 +109,9 @@ with open("rag_evaluation_file.csv", "w", newline="", encoding="utf-8") as outpu
  
         question = item["query"]  # Assuming these keys match the CSV headers
         response1 = item["opinion_conv_response"]
-        response2 = extract_assistant_response(item["llm_response"])
+        response2 = extract_assistant_response(item.get("our_rag_response", ""))
         response3 = extract_assistant_response(item["vanilla_rag_response"])
-        response4 = extract_assistant_response(item.get("our_rag_response", ""))
+        response4 = extract_assistant_response(item["llm_response"])
 
         # Format the prompt
         final_prompt = prompt_creation(
@@ -133,9 +133,9 @@ with open("rag_evaluation_file.csv", "w", newline="", encoding="utf-8") as outpu
                 "question": question,
                 "llm evaluation response": llm_response,
                 "opinion_conv_response": response1,
-                "llm_response": response2,
+               "our_rag_response": response2,
                 "vanilla_rag_response": response3,
-                "our_rag_response": response4,
+                "llm_response": response4,
             }
         )
 
