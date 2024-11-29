@@ -316,7 +316,7 @@ if __name__ == "__main__":
     # Load pickled data
     #TODO: change it to pos
     with open(
-        base_dir+"/RAG/data/neg_question_answer_pairs.pkl", "rb"
+        base_dir+"/RAG/data/pos_question_answer_pairs.pkl", "rb"
     ) as f:
         blocks_pos_100 = pickle.load(f)
     
