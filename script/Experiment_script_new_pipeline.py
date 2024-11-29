@@ -89,9 +89,9 @@ def create_vector_database():
             )
         ]
         #TODO: remove this check
-        counter+=1
-        if counter>5:
-            break
+        # counter+=1
+        # if counter>5:
+        #     break
 
     db = FAISS.from_documents(
         raw_knowledge_base,
@@ -105,16 +105,16 @@ def create_vector_database():
 
 def get_vanilla_rag_response(question, product_name, model, tokenizer, vector_database):
 
-    relevant_doc = vector_database.similarity_search(query=question, k=1)
+    relevant_doc = vector_database.similarity_search(query=question, k=10)
 
     pprint.pprint("Relevant Doc in vanilla:")
     pprint.pprint(relevant_doc)
 
+    filtered_docs = [
+        doc for doc in relevant_doc if doc.metadata["reviewId"] != review_id
+    ]
 
-    #TODO: do we need the unique review filter
-
-
-    relevant_doc = relevant_doc[0]
+    relevant_doc = filtered_docs[0]
 
     detailed_information = ""
 
@@ -277,7 +277,7 @@ def load_metadata_dataset():
     df_metaData_raw_cellPhones = load_dataset(
         "McAuley-Lab/Amazon-Reviews-2023",
         "raw_meta_Cell_Phones_and_Accessories",
-        split="test", #TODO: change this to full
+        split="full", #TODO: change this to full
         trust_remote_code=True,
     )
 
@@ -288,8 +288,8 @@ if __name__ == "__main__":
     print("Hi")
     
     # Load metadata dataset once here
-    # df_metaData_raw_cellPhones = load_metadata_dataset()
-    # parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+    df_metaData_raw_cellPhones = load_metadata_dataset()
+    parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
     
     print("zain")
     # create vector database
