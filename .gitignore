@@ -12,3 +12,4 @@ key.json
 checkpoint*
 integrated_dataset*
 faiss_index*
+myenv

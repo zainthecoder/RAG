@@ -99,10 +99,6 @@ def create_vector_database():
 
 def get_vanilla_rag_response(question, product_name, model, tokenizer, vector_database):
 
-    # create vector database
-    if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
-        create_vector_database()
-
     relevant_doc = vector_database.similarity_search(query=question, k=1)
 
     pprint.pprint("Relevant Doc in vanilla:")
@@ -167,10 +163,6 @@ def get_vanilla_rag_response(question, product_name, model, tokenizer, vector_da
 def get_our_rag_response(
     question, label, aspect, product_id, review_id, answer, product_name, model, tokenizer, vector_database
 ):
-    # Create vector database if not exists
-    if not os.path.exists("/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index"):
-        create_vector_database()
-
     # Define default filter and search settings
     base_filter = {
         "polarity": "Positive",
@@ -276,27 +268,33 @@ def get_our_rag_response(
 
 # Load dataset once and pass it as an argument to relevant functions
 def load_metadata_dataset():
-    return load_dataset(
+    df_metaData_raw_cellPhones = load_dataset(
         "McAuley-Lab/Amazon-Reviews-2023",
         "raw_meta_Cell_Phones_and_Accessories",
         split="full",
         trust_remote_code=True,
     )
 
+    return df_metaData_raw_cellPhones
+
 if __name__ == "__main__":
     print("Hi")
     # Load metadata dataset once here
     df_metaData_raw_cellPhones = load_metadata_dataset()
     parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+    print("zain")
+    # create vector database
+    if not os.path.exists("/home/s28zabed/RAG/script/faiss_index"):
+        create_vector_database()
 
-
+    print("zain1")
     vector_database = FAISS.load_local(
-        "/home/stud/abedinz1/localDisk/RAG/RAG/script/faiss_index",
+        "/home/s28zabed/RAG/script/faiss_index",
         get_embedding_model(),
         allow_dangerous_deserialization=True,
     )
 
-
+    print("zain2")
 
     # Load pickled data
     with open(
