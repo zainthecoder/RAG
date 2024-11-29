@@ -298,7 +298,7 @@ if __name__ == "__main__":
 
     # Load pickled data
     with open(
-        "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl", "rb"
+        "/home/s28zabed/RAG/data/question_answer_pairs.pkl", "rb"
     ) as f:
         blocks_neg_100 = pickle.load(f)
 

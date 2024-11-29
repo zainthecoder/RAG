@@ -10,87 +10,88 @@ def extract_question_answer_pairs(data_stream):
     qa_pairs = []
     unique_ids = set()
 
-    for data in data_stream:
+    # for data in data_stream:
+    #     ipdb.set_trace()
         # print("product_data")
         # pprint.pprint(product_data)
-        for product_key, product_data in data.items():
-            print("product_key:", product_key)
-            # Assuming product_data is a dictionary for each product
-            for conv_type, conv_type_data in product_data.items():
-                print("conv_type", conv_type)
-                # print("conv_type_data:",conv_type_data)
-                if conv_type == "Qpos1A_Apos1A":
-                    question, answer = None, None
-                    for pair_key, pair_data in conv_type_data.items():
-                        for key, value in pair_data.items():
-                            if "Qpos1A" in key:
-                                question = value["Question"]
-                                product_id = value["Labels"]["Key"].split("_")[0]
-                                aspect = value["Labels"]["Aspect"]
-                                polarity = value["Labels"]["Polarity"]
-                                review_id = value["Labels"]["Key"]
-                                unique_ids.add(product_id)
-                            elif "Apos1A" in key:
-                                answer = value["Answer"]
-                                product_id = value["Labels"]["Key"].split("_")[0]
-                                aspect = value["Labels"]["Aspect"]
-                                polarity = value["Labels"]["Polarity"]
-                                review_id = value["Labels"]["Key"]
-                                unique_ids.add(product_id)
-                        if question and answer:
-                            unique_id = generate(size=10)
-                            qa_pairs.append(
-                                {
-                                    "unique_id": unique_id,
-                                    "product_id": product_id,
-                                    "question": question,
-                                    "answer": answer,
-                                    "label": "Qpos1A_Apos1A",
-                                    "aspect": aspect,
-                                    "polarity": polarity,
-                                    "review_id": review_id,
-                                }
-                            )
-                else:
-                    for pair_key, pair_data in conv_type_data.items():
-                        question_flag = True
-                        print("pair_key:   ", pair_key)
-                        print("pair_data", pair_data)
-                        for key, value in pair_data.items():
-                            if question_flag:
-                                question = value["Opinion"]
-                                product_id = value["Labels"]["Key"].split("_")[0]
-                                aspect = value["Labels"]["Aspect"]
-                                polarity = value["Labels"]["Polarity"]
-                                review_id = value["Labels"]["Key"]
-                                if conv_type == "Oneg1A_Opos1B":
-                                    bought_together = value["Labels"]["bought_together"]
-                                else:
-                                    bought_together = []
-                                unique_ids.add(product_id)
-                                question_flag = False
-                            elif question_flag == False:
-                                answer = value["Opinion"]
-                                product_id = value["Labels"]["Key"].split("_")[0]
-                                aspect = value["Labels"]["Aspect"]
-                                polarity = value["Labels"]["Polarity"]
-                                review_id = value["Labels"]["Key"]
-                                unique_ids.add(product_id)
+    for product_key, product_data in data_stream.items():
+        print("product_key:", product_key)
+        # Assuming product_data is a dictionary for each product
+        for conv_type, conv_type_data in product_data.items():
+            #print("conv_type", conv_type)
+            # print("conv_type_data:",conv_type_data)
+            if conv_type == "Qpos1A_Apos1A":
+                question, answer = None, None
+                for pair_key, pair_data in conv_type_data.items():
+                    for key, value in pair_data.items():
+                        if "Qpos1A" in key:
+                            question = value["Question"]
+                            product_id = value["Labels"]["Key"].split("_")[0]
+                            aspect = value["Labels"]["Aspect"]
+                            polarity = value["Labels"]["Polarity"]
+                            review_id = value["Labels"]["Key"]
+                            unique_ids.add(product_id)
+                        elif "Apos1A" in key:
+                            answer = value["Answer"]
+                            product_id = value["Labels"]["Key"].split("_")[0]
+                            aspect = value["Labels"]["Aspect"]
+                            polarity = value["Labels"]["Polarity"]
+                            review_id = value["Labels"]["Key"]
+                            unique_ids.add(product_id)
+                    if question and answer:
+                        unique_id = generate(size=10)
+                        qa_pairs.append(
+                            {
+                                "unique_id": unique_id,
+                                "product_id": product_id,
+                                "question": question,
+                                "answer": answer,
+                                "label": "Qpos1A_Apos1A",
+                                "aspect": aspect,
+                                "polarity": polarity,
+                                "review_id": review_id,
+                            }
+                        )
+            else:
+                for pair_key, pair_data in conv_type_data.items():
+                    question_flag = True
+                    #print("pair_key:   ", pair_key)
+                    #print("pair_data", pair_data)
+                    for key, value in pair_data.items():
+                        if question_flag:
+                            question = value["Opinion"]
+                            product_id = value["Labels"]["Key"].split("_")[0]
+                            aspect = value["Labels"]["Aspect"]
+                            polarity = value["Labels"]["Polarity"]
+                            review_id = value["Labels"]["Key"]
+                            if conv_type == "Oneg1A_Opos1B":
+                                bought_together = value["Labels"]["bought_together"]
+                            else:
+                                bought_together = []
+                            unique_ids.add(product_id)
+                            question_flag = False
+                        elif question_flag == False:
+                            answer = value["Opinion"]
+                            product_id = value["Labels"]["Key"].split("_")[0]
+                            aspect = value["Labels"]["Aspect"]
+                            polarity = value["Labels"]["Polarity"]
+                            review_id = value["Labels"]["Key"]
+                            unique_ids.add(product_id)
 
-                        if question and answer:
-                            unique_id = generate(size=10)
-                            qa_pairs.append(
-                                {
-                                    "unique_id": unique_id,
-                                    "product_id": product_id,
-                                    "question": question,
-                                    "answer": answer,
-                                    "label": conv_type,
-                                    "aspect": aspect,
-                                    "polarity": polarity,
-                                    "review_id": review_id,
-                                }
-                            )
+                    if question and answer:
+                        unique_id = generate(size=10)
+                        qa_pairs.append(
+                            {
+                                "unique_id": unique_id,
+                                "product_id": product_id,
+                                "question": question,
+                                "answer": answer,
+                                "label": conv_type,
+                                "aspect": aspect,
+                                "polarity": polarity,
+                                "review_id": review_id,
+                            }
+                        )
 
     return qa_pairs, unique_ids
 
@@ -142,7 +143,7 @@ with open(output_file_path, "wb") as f:
 
 # Save unique IDs to another pickle file
 unique_ids_file_path = (
-    "/home/stud/abedinz1/localDisk/RAG/RAG/data/unique_product_ids.pkl"
+    "/home/s28zabed/RAG/data/unique_product_ids.pkl"
 )
 with open(unique_ids_file_path, "wb") as file:
     pickle.dump(unique_ids, file)
