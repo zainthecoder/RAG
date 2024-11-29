@@ -5,6 +5,7 @@ import pickle
 import pprint
 import ipdb
 
+base_dir = "/home/s28zabed"
 
 def extract_question_answer_pairs(data_stream):
     qa_pairs = []
@@ -125,7 +126,7 @@ def load_json(file_path):
 
 # File path to your large JSONL file
 #file_path = "/home/stud/abedinz1/localDisk/opinionconv-refactor/100_blocks_neg.jsonl"
-file_path= "/home/s28zabed/opinionconv-refactor/100_blocks_neg.json"
+file_path= base_dir+"/opinionconv-refactor/100_blocks_neg.json"
 
 # Load data from the JSONL file as a stream
 #data_stream = load_jsonl_stream(file_path)
@@ -136,14 +137,14 @@ qa_pairs, unique_ids = extract_question_answer_pairs(data_stream)
 
 # Save qa_pairs as a Python list to a pickle file
 output_file_path = (
-    "/home/s28zabed/RAG/data/question_answer_pairs.pkl"
+    base_dir+"/RAG/data/question_answer_pairs.pkl"
 )
 with open(output_file_path, "wb") as f:
     pickle.dump(qa_pairs, f)
 
 # Save unique IDs to another pickle file
 unique_ids_file_path = (
-    "/home/s28zabed/RAG/data/unique_product_ids.pkl"
+    base_dir+"/RAG/data/unique_product_ids.pkl"
 )
 with open(unique_ids_file_path, "wb") as file:
     pickle.dump(unique_ids, file)

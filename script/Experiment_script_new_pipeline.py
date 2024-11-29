@@ -15,6 +15,8 @@ import pprint
 from config import label_map, get_tokenizer, get_embedding_model, get_reader_model
 from datasets import load_dataset
 
+base_dir = "/home/s28zabed"
+
 def get_llm_response(question, product_name, model, tokenizer):
 
     messages = [
@@ -53,7 +55,7 @@ def create_vector_database():
     print("Creating Vector Database")
 
     with open(
-        "/home/s28zabed/opinionconv-refactor/transformed_data_for_vector_database.json",
+        base_dir+"/opinionconv-refactor/transformed_data_for_vector_database.json",
         "r",
     ) as file:
         data = json.load(file)
@@ -293,12 +295,12 @@ if __name__ == "__main__":
     
     print("zain")
     # create vector database
-    if not os.path.exists("/home/s28zabed/RAG/script/faiss_index"):
+    if not os.path.exists(base_dir+"/RAG/script/faiss_index"):
         create_vector_database()
 
     print("zain1")
     vector_database = FAISS.load_local(
-        "/home/s28zabed/RAG/script/faiss_index",
+        base_dir+"/RAG/script/faiss_index",
         get_embedding_model(),
         allow_dangerous_deserialization=True,
     )
@@ -307,7 +309,7 @@ if __name__ == "__main__":
 
     # Load pickled data
     with open(
-        "/home/s28zabed/RAG/data/question_answer_pairs.pkl", "rb"
+        base_dir+"/RAG/data/question_answer_pairs.pkl", "rb"
     ) as f:
         blocks_neg_100 = pickle.load(f)
 
