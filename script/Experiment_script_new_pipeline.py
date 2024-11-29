@@ -53,7 +53,7 @@ def create_vector_database():
     print("Creating Vector Database")
 
     with open(
-        "/home/stud/abedinz1/localDisk/opinionconv-refactor/transformed_data_for_vector_database.json",
+        "/home/s28zabed/opinionconv-refactor/transformed_data_for_vector_database.json",
         "r",
     ) as file:
         data = json.load(file)

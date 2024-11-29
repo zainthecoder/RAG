@@ -8,11 +8,12 @@ bitsandbytes
 langchain
 sentence-transformers
 sentence-transformers
+langchain_huggingface
 openpyxl
 pacmap
 torch
 pandas
-faiss-gpu
+faiss-gpu-cu12
 matplotlib
 tqdm
 pandas
@@ -22,7 +23,6 @@ datasets
 pprintpp
 uuid
 nanoid
-random
 spacy
 setfit
 sentencepiece

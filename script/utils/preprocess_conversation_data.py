@@ -109,19 +109,33 @@ def load_jsonl_stream(file_path):
             except json.JSONDecodeError as e:
                 raise Error(e)  # Handle invalid JSON lines gracefully
 
+def load_json(file_path):
+    """Load data from a JSON file."""
+    if not os.path.exists(file_path):
+        print(f"File '{file_path}' not found.")
+        return None
+
+    with open(file_path, "r") as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            return None
 
 # File path to your large JSONL file
-file_path = "/home/stud/abedinz1/localDisk/opinionconv-refactor/100_blocks_neg.jsonl"
+#file_path = "/home/stud/abedinz1/localDisk/opinionconv-refactor/100_blocks_neg.jsonl"
+file_path= "/home/s28zabed/opinionconv-refactor/100_blocks_neg.json"
 
 # Load data from the JSONL file as a stream
-data_stream = load_jsonl_stream(file_path)
+#data_stream = load_jsonl_stream(file_path)
+data_stream = load_json(file_path)
 
 # Extract question-answer pairs
 qa_pairs, unique_ids = extract_question_answer_pairs(data_stream)
 
 # Save qa_pairs as a Python list to a pickle file
 output_file_path = (
-    "/home/stud/abedinz1/localDisk/RAG/RAG/data/question_answer_pairs.pkl"
+    "/home/s28zabed/RAG/data/question_answer_pairs.pkl"
 )
 with open(output_file_path, "wb") as f:
     pickle.dump(qa_pairs, f)
