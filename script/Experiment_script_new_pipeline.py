@@ -74,18 +74,24 @@ def create_vector_database():
             break
 
     # """Preprocess documents for Langchain."""
-    raw_knowledge_base = [
-        LangchainDocument(
-            page_content=doc["sentence"],
-            metadata={
-                "productId": doc["asin"],
-                "aspect": doc["aspect"],
-                "polarity": doc["sentiment"],
-                "reviewId": f'{doc["asin"]}_{doc["user_id"]}_{doc["unique_key"]}',
-            },
-        )
-        for doc in ds
-    ]
+    
+    for doc in ds:
+        counter =0
+        raw_knowledge_base = [
+            LangchainDocument(
+                page_content=doc["sentence"],
+                metadata={
+                    "productId": doc["asin"],
+                    "aspect": doc["aspect"],
+                    "polarity": doc["sentiment"],
+                    "reviewId": f'{doc["asin"]}_{doc["user_id"]}_{doc["unique_key"]}',
+                },
+            )
+        ]
+        #TODO: remove this check
+        counter+=1
+        if counter>5:
+            break
 
     db = FAISS.from_documents(
         raw_knowledge_base,
@@ -271,17 +277,20 @@ def load_metadata_dataset():
     df_metaData_raw_cellPhones = load_dataset(
         "McAuley-Lab/Amazon-Reviews-2023",
         "raw_meta_Cell_Phones_and_Accessories",
-        split="full",
+        split="test", #TODO: change this to full
         trust_remote_code=True,
     )
 
     return df_metaData_raw_cellPhones
 
 if __name__ == "__main__":
+    
     print("Hi")
+    
     # Load metadata dataset once here
-    df_metaData_raw_cellPhones = load_metadata_dataset()
-    parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+    # df_metaData_raw_cellPhones = load_metadata_dataset()
+    # parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+    
     print("zain")
     # create vector database
     if not os.path.exists("/home/s28zabed/RAG/script/faiss_index"):
@@ -344,7 +353,9 @@ if __name__ == "__main__":
             label = label_map[label]
             print("Label: ",label)
 
-            product_name = parent_asin_to_title[product_id]
+            #TODO: Undo this
+            #product_name = parent_asin_to_title[product_id]
+            product_name = "test"
 
             # Save llm response
             print("save llm response")
