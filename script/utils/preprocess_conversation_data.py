@@ -137,17 +137,45 @@ qa_pairs, unique_ids = extract_question_answer_pairs(data_stream)
 
 # Save qa_pairs as a Python list to a pickle file
 output_file_path = (
-    base_dir+"/RAG/data/question_answer_pairs.pkl"
+    base_dir+"/RAG/data/neg_question_answer_pairs.pkl"
 )
 with open(output_file_path, "wb") as f:
     pickle.dump(qa_pairs, f)
 
 # Save unique IDs to another pickle file
 unique_ids_file_path = (
-    base_dir+"/RAG/data/unique_product_ids.pkl"
+    base_dir+"/RAG/data/neg_unique_product_ids.pkl"
 )
 with open(unique_ids_file_path, "wb") as file:
     pickle.dump(unique_ids, file)
 print("unique_ids", unique_ids)
 
-print(f"Processed {len(qa_pairs)} question-answer pairs.")
+print(f"Processed {len(qa_pairs)} neg question-answer pairs.")
+
+
+# POS question answers
+file_path= base_dir+"/opinionconv-refactor/100_blocks_pos.json"
+
+# Load data from the JSONL file as a stream
+#data_stream = load_jsonl_stream(file_path)
+data_stream = load_json(file_path)
+
+# Extract question-answer pairs
+qa_pairs, unique_ids = extract_question_answer_pairs(data_stream)
+
+# Save qa_pairs as a Python list to a pickle file
+output_file_path = (
+    base_dir+"/RAG/data/pos_question_answer_pairs.pkl"
+)
+with open(output_file_path, "wb") as f:
+    pickle.dump(qa_pairs, f)
+
+# Save unique IDs to another pickle file
+unique_ids_file_path = (
+    base_dir+"/RAG/data/pos_unique_product_ids.pkl"
+)
+with open(unique_ids_file_path, "wb") as file:
+    pickle.dump(unique_ids, file)
+print("unique_ids", unique_ids)
+
+print(f"Processed {len(qa_pairs)} pos question-answer pairs.")

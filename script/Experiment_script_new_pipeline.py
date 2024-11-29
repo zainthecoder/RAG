@@ -309,9 +309,18 @@ if __name__ == "__main__":
 
     # Load pickled data
     with open(
-        base_dir+"/RAG/data/question_answer_pairs.pkl", "rb"
+        base_dir+"/RAG/data/neg_question_answer_pairs.pkl", "rb"
     ) as f:
         blocks_neg_100 = pickle.load(f)
+    
+    # Load pickled data
+    #TODO: change it to pos
+    with open(
+        base_dir+"/RAG/data/neg_question_answer_pairs.pkl", "rb"
+    ) as f:
+        blocks_pos_100 = pickle.load(f)
+    
+    blocks_neg_100.extend(blocks_pos_100)
 
     counter = 0
     print("wassup")
