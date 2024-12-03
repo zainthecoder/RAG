@@ -43,7 +43,7 @@ def prompt_creation(question, response1, response2, response3, response4):
     {
     "role": "user",
     "content": """
-    You are an evaluator assigned to assess four response options provided to a customer's question.  
+    You are an evaluator assigned to assess four response options provided to a customer's opinion/question.  
     Your task is to evaluate each response **holistically** based on key criteria and assign a single **overall score** between 1 and 5 for each option. 
 
     Please think critically, consider how each response meets the customer's needs, and justify the overall score with a brief explanation that touches on each criterion.
@@ -58,7 +58,7 @@ def prompt_creation(question, response1, response2, response3, response4):
        - A low score (1) indicates a response that feels robotic, detached, or artificial.
 
     2. **Relevance**:  
-       How well does the response directly address the customer's question, needs, or concerns?  
+       How well does the response directly address the customer's opinion/question, needs, or concerns?  
        - A high score (5) means the response is tailored to the customer's situation.  
        - A low score (1) means it is off-topic or fails to address the customer’s intent.
 
@@ -112,7 +112,7 @@ def prompt_creation(question, response1, response2, response3, response4):
             {
                 "role": "user",
                 "content": f"""
-    Customer question: {question}
+    Customer opinion/question: {question}
 
     Options:  
     Option 1: {response1}  
