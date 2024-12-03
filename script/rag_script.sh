@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=A40short
-#SBATCH --time=0:10:00
+#SBATCH --time=1:10:00
 #SBATCH --gpus=1
 #SBATCH --ntasks=1
 #SBATCH --output=/home/s28zabed/RAG/logs/output_rag.out

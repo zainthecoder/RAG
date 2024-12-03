@@ -90,10 +90,6 @@ def create_vector_database():
                 },
             )
         ]
-        #TODO: remove this check
-        # counter+=1
-        # if counter>5:
-        #     break
 
     db = FAISS.from_documents(
         raw_knowledge_base,
@@ -109,6 +105,7 @@ def get_vanilla_rag_response(question, product_name, model, tokenizer, vector_da
 
     relevant_doc = vector_database.similarity_search(query=question, k=10)
 
+    print("Inside vanilla Rag: ",question)
     pprint.pprint("Relevant Doc in vanilla:")
     pprint.pprint(relevant_doc)
 
@@ -162,7 +159,7 @@ def get_vanilla_rag_response(question, product_name, model, tokenizer, vector_da
     generated_ids = model.generate(model_inputs, max_new_tokens=1000, do_sample=True)
     generated_data = tokenizer.batch_decode(generated_ids)[0]
 
-    print("\nResonse from our rag response")
+    print("\nResonse from vanilla rag response")
     pprint.pprint(generated_data)
     answer = generated_data
 
@@ -186,6 +183,11 @@ def get_our_rag_response(
         k=500,  # Number of results to return
         fetch_k=96206,  # Number of results to fetch before filtering
     )
+
+    #TODO: REMOVE THIS
+    print("the base filter in our rag: ", base_filter)
+    print("Relevant doc: ",relevant_docs)
+    print("question: ",question)
 
     # NOTE: This filter applies to all labels.
     # Thats why we dont have any seperate if condition for Opos1B_Opos1B2 label.
@@ -295,7 +297,7 @@ if __name__ == "__main__":
     # parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
 
     # Load the JSON file
-    with open('parent_asin_to_title.json', 'r') as f:
+    with open('script/parent_asin_to_title.json', 'r') as f:
         print("loading")
         parent_asin_to_title = json.load(f)
     
@@ -313,9 +315,7 @@ if __name__ == "__main__":
         allow_dangerous_deserialization=True,
     )
 
-    print("zain2")
-
-    # Load pickled data
+    # # Load pickled data
     with open(
         base_dir+"/RAG/data/neg_question_answer_pairs.pkl", "rb"
     ) as f:
@@ -323,7 +323,6 @@ if __name__ == "__main__":
         blocks_neg_100 = pickle.load(f)
     
     # Load pickled data
-    #TODO: change it to pos
     with open(
         base_dir+"/RAG/data/pos_question_answer_pairs.pkl", "rb"
     ) as f:
@@ -331,6 +330,7 @@ if __name__ == "__main__":
         blocks_pos_100 = pickle.load(f)
     
     blocks_neg_100.extend(blocks_pos_100)
+
 
     counter = 0
     print("wassup")
@@ -374,15 +374,13 @@ if __name__ == "__main__":
             label = label_map[label]
             print("Label: ",label)
 
-            #TODO: Undo this
-            #product_name = parent_asin_to_title[product_id]
-            product_name = "test"
+            product_name = parent_asin_to_title[product_id]
 
             # Save llm response
             print("save llm response")
             llm_response = get_llm_response(question, product_name, get_reader_model(), get_tokenizer())
             
-            print("\n\n")
+            # print("\n\n")
             #Save vanilla rag response
             print("save vanilla rag response")
             vanilla_rag_response  = get_vanilla_rag_response(
@@ -404,7 +402,7 @@ if __name__ == "__main__":
                 get_tokenizer(),
                 vector_database
             )
-
+            print("writing to utput_file_path.csv")
             # Write in csv
             writer.writerow(
                 {
@@ -418,5 +416,5 @@ if __name__ == "__main__":
             )
 
             # counter+=1
-            # if counter>3:
+            # if counter>50:
             #     break
