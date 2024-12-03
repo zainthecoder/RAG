@@ -38,54 +38,94 @@ def get_llm_response(messages, tokenizer, model):
 
 
 def prompt_creation(question, response1, response2, response3, response4):
+    
     messages = [
-        {
-            "role": "user",
-            "content": """
-            You are an evaluator assigned to assess four response options provided to a customer question. 
-            Please review each response in depth based on specific criteria and assign a score between 1 and 5 for each criterion.
+    {
+    "role": "user",
+    "content": """
+    You are an evaluator assigned to assess four response options provided to a customer's question.  
+    Your task is to evaluate each response **holistically** based on key criteria and assign a single **overall score** between 1 and 5 for each option. 
 
-            **Evaluation Criteria**:
-            1. **Realism**:Assess how natural, personable, and engaging the sales agent's response feels. A high score (5) should indicate that the response sounds like a skilled salesperson genuinely interacting with the customer, building rapport, and showing empathy. A low score (1) indicates a response that feels artificial, overly rehearsed, or detached.
-            2. **Relevance**: Check if the sales agent’s response directly addresses the customer’s needs, preferences, or concerns expressed in their question. A high score (5) means the response is precisely tailored to the customer's situation, demonstrating a deep understanding of their requirements. A low score (1) means the response is off-topic or does not align with the customer's expressed interests.
-            3. **Conciseness**: Evaluate if the response provides the necessary information effectively without overwhelming the customer with excessive details. A high score (5) indicates the agent conveys key points clearly and efficiently, maintaining the customer’s attention. A low score (1) reflects a response that is too verbose or includes unnecessary or irrelevant information.
-            4. **Persuasiveness**: Judge how effectively the response motivates the customer to consider or purchase the product/service. A high score (5) should indicate the use of persuasive language, compelling value propositions, and addressing objections skillfully. A low score (1) means the response lacks impact, fails to highlight benefits, or does not encourage action.
-            5. **Subjectiveness**: Assess whether the response includes a personalized or emotionally engaging approach, such as sharing opinions, testimonials, or tailored recommendations. A high score (5) reflects a response that feels individualized and expressive, whereas a low score (1) indicates the response is entirely factual, generic, or devoid of personal touch.
+    Please think critically, consider how each response meets the customer's needs, and justify the overall score with a brief explanation that touches on each criterion.
 
-            **Evaluation Process**:
-            1. For each option, provide individual scores for the criteria listed above.
-            2. Calculate the average score for each option based on the five criteria.
-            3. Choose the option with the highest average score as the best response.
+    ---
 
-            Return the evaluation in the following format:
-            Option 1:
-              - Realism: [score]
-              - Relevance: [score]
-              - Conciseness: [score]
-              - Persuasiveness: [score]
-              - Subjectiveness: [score]
-              - Average Score: [calculated average]
-            Option 2: [scores and average]...
-            ...
-            The final answer is the option with the highest average score: [chosen option].
-            """,
-        },
-        {
-            "role": "user",
-            "content": f"""
-            Customer question: {question}
+    ### **Evaluation Criteria**:
 
-            Options:
-            Option 1: {response1}
-            Option 2: {response2}
-            Option 3: {response3}
-            Option 4: {response4}
+    1. **Realism**:  
+       Does the response sound natural, engaging, and like a genuine human interaction?  
+       - A high score (5) reflects a skilled salesperson who builds rapport and demonstrates empathy.  
+       - A low score (1) indicates a response that feels robotic, detached, or artificial.
 
-            Please follow the specified format carefully, ensure each response is analyzed individually, and calculate the average before making the final selection.
-            """,
-        },
-    ]
+    2. **Relevance**:  
+       How well does the response directly address the customer's question, needs, or concerns?  
+       - A high score (5) means the response is tailored to the customer's situation.  
+       - A low score (1) means it is off-topic or fails to address the customer’s intent.
+
+    3. **Conciseness**:  
+       Is the response clear and efficient in conveying necessary information without overwhelming the customer?  
+       - A high score (5) indicates a well-balanced, concise response.  
+       - A low score (1) indicates verbosity or excessive details.
+
+    4. **Persuasiveness**:  
+       How effectively does the response motivate the customer to take action or consider the product/service?  
+       - A high score (5) reflects strong persuasive language and value propositions.  
+       - A low score (1) lacks impact or fails to highlight benefits.
+
+    5. **Subjectiveness**:  
+       Does the response feel personalized or emotionally engaging?  
+       - A high score (5) reflects individualized recommendations, opinions, or testimonials.  
+       - A low score (1) feels generic, factual, or impersonal.
+
+    ---
+
+    ### **Evaluation Process**:
+
+    1. **Individually assess** each response option based on the criteria listed.  
+    2. Assign a single **overall score** between 1 and 5 to each option.  
+    3. Provide a brief explanation for the score, referencing key strengths or weaknesses across the criteria.  
+    4. Select the response with the highest overall score as the best option.
+
+    ---
+
+    ### **Evaluation Format**:
+
+    Option 1:  
+    - **Overall Score**: [score]  
+    - **Justification**: [explain strengths and weaknesses based on the criteria]
+
+    Option 2:  
+    - **Overall Score**: [score]  
+    - **Justification**: [explain strengths and weaknesses based on the criteria]
+
+    Option 3:  
+    - **Overall Score**: [score]  
+    - **Justification**: [explain strengths and weaknesses based on the criteria]
+
+    Option 4:  
+    - **Overall Score**: [score]  
+    - **Justification**: [explain strengths and weaknesses based on the criteria]
+
+    The final answer is the option with the highest overall score: [chosen option].
+                """,
+            },
+            {
+                "role": "user",
+                "content": f"""
+    Customer question: {question}
+
+    Options:  
+    Option 1: {response1}  
+    Option 2: {response2}  
+    Option 3: {response3}  
+    Option 4: {response4}
+
+    Please provide a thoughtful, well-justified evaluation and select the best response based on the highest overall score.
+                """,
+            },
+        ]
     return messages
+
 
 
 
