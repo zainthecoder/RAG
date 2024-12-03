@@ -275,30 +275,38 @@ def get_our_rag_response(
 
 
 # Load dataset once and pass it as an argument to relevant functions
-def load_metadata_dataset():
-    df_metaData_raw_cellPhones = load_dataset(
-        "McAuley-Lab/Amazon-Reviews-2023",
-        "raw_meta_Cell_Phones_and_Accessories",
-        split="full", #TODO: change this to full
-        trust_remote_code=True,
-    )
-
-    return df_metaData_raw_cellPhones
+# def load_metadata_dataset():
+#     print("loading data")
+#     df_metaData_raw_cellPhones = load_dataset(
+#         "McAuley-Lab/Amazon-Reviews-2023",
+#         "raw_meta_Cell_Phones_and_Accessories",
+#         split="full", #TODO: change this to full
+#         trust_remote_code=True,
+#     )
+#     print("loaded")
+#     return df_metaData_raw_cellPhones
 
 if __name__ == "__main__":
     
     print("Hi")
     
-    # Load metadata dataset once here
-    df_metaData_raw_cellPhones = load_metadata_dataset()
-    parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+    # # Load metadata dataset once here
+    # df_metaData_raw_cellPhones = load_metadata_dataset()
+    # parent_asin_to_title = {row['parent_asin']: row['title'] for row in df_metaData_raw_cellPhones}
+
+    # Load the JSON file
+    with open('parent_asin_to_title.json', 'r') as f:
+        print("loading")
+        parent_asin_to_title = json.load(f)
     
     print("zain")
     # create vector database
     if not os.path.exists(base_dir+"/RAG/script/faiss_index"):
+        print("creating vdb")
         create_vector_database()
 
     print("zain1")
+    print("loading vectro db")
     vector_database = FAISS.load_local(
         base_dir+"/RAG/script/faiss_index",
         get_embedding_model(),
@@ -311,6 +319,7 @@ if __name__ == "__main__":
     with open(
         base_dir+"/RAG/data/neg_question_answer_pairs.pkl", "rb"
     ) as f:
+        print("loading neg pickle")
         blocks_neg_100 = pickle.load(f)
     
     # Load pickled data
@@ -318,6 +327,7 @@ if __name__ == "__main__":
     with open(
         base_dir+"/RAG/data/pos_question_answer_pairs.pkl", "rb"
     ) as f:
+        print("loading pos pickle")
         blocks_pos_100 = pickle.load(f)
     
     blocks_neg_100.extend(blocks_pos_100)

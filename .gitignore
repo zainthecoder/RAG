@@ -5,9 +5,6 @@
 __pycache*
 Cell_Phones_and_Accessories_5.json.gz
 .DS_Store
-*.json
-*.zip
-*.pickle
 key.json
 checkpoint*
 integrated_dataset*
