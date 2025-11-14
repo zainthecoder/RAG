@@ -3,6 +3,13 @@
 A framework for simulating opinionated conversations for product search and evaluation using RAG, FAISS indexing, and OpinionConv Q-A generation.
 
 ---
+## Architecture
+
+<p align="center">
+  <img src="04b5bc71-e3d7-4a01-9697-98e8ad68da75.png" width="800">
+</p>
+
+---
 
 ## Overview
 
@@ -139,9 +146,3 @@ marvin submit --job-name rag-opinionconv \
 2. Add tests and update docs
 3. Open PR with description
 
----
-## Architecture
-
-<p align="center">
-  <img src="assets/diagram.png" width="800">
-</p>
